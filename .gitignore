@@ -19,3 +19,4 @@
 # .NET 테스트 빌드
 bin/
 obj/
+mismatch-*.txt

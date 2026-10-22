@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Unity 없이 전투 엔진만 컴파일해서 웹 시뮬레이터 골든과 비교한다. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Battle/**/*.cs" />
+    <None Include="golden.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
