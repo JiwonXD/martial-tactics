@@ -1,0 +1,21 @@
+# 삼국지 전략판 전보 스크린샷 (타 게임 자료, 커밋 금지)
+삼전 전보/
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+/*.csproj
+/*.sln
+*.user
+*.pidb
+*.booproj
+*.unityproj
+
+# .NET 테스트 빌드
+bin/
+obj/
