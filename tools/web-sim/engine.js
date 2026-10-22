@@ -241,7 +241,7 @@
           skills: [d.skill, ...s.skills.filter(Boolean)].map(id => SKILL[id]),
           status: {}, mods: [], immune: new Set(), prep: null,
           hooks: { roundStart: [], damaged: [] },
-          rec: { dealt: 0, healed: 0, taken: 0, procs: {} },
+          rec: { dealt: 0, healed: 0, taken: 0, procs: {}, bySkill: {} },
         };
       });
     }
@@ -301,7 +301,7 @@
       if (dst.immune.has(key)) { this.log(`${this.tag(dst)}: ${STATUS_NAMES[key]} 면역`); return; }
       if (dst.status[key]) return; // 같은 종류는 중첩되지 않음
       const entry = { rounds, since: this.turnSeq };
-      if (dot) entry.tick = Math.round(this.rawDamage(src, dst, dot.kind, dot.coef));
+      if (dot) Object.assign(entry, { tick: Math.round(this.rawDamage(src, dst, dot.kind, dot.coef)), src, label: this.acting });
       dst.status[key] = entry;
       this.log(`${this.tag(dst)}: ${STATUS_NAMES[key]} (${rounds}합)`);
     }
@@ -332,21 +332,28 @@
         const share = Math.round(dmg * g.ratio);
         if (share > 0) {
           dmg -= share;
-          this.applyLoss(g.by, share, src);
+          this.applyLoss(g.by, share, src, label);
           this.log(`${this.tag(g.by)}의 호위: ${this.tag(dst)} 대신 ${share} 피해 (남은 체력 ${g.by.hp})`);
         }
       }
-      this.applyLoss(dst, dmg, src);
+      this.applyLoss(dst, dmg, src, label);
       this.log(`${this.tag(src)}의 ${label}${crit ? ' (치명타)' : ''} → ${this.tag(dst)} ${dmg} 피해 (${kind === 'ext' ? '무기' : '내공'}, 남은 체력 ${dst.hp})`);
       if (!dst.dead && !opts.counter) dst.hooks.damaged.forEach(h => h(src, { normal: !!opts.normal, kind }));
       return dmg;
     }
 
-    applyLoss(dst, dmg, src) {
+    // 무공별 집계. '탈명연환 추가타'처럼 꾸밈말이 붙은 이름은 무공 이름으로 묶는다.
+    record(u, label, key, amt) {
+      const name = label.split(' ')[0];
+      const r = u.rec.bySkill[name] || (u.rec.bySkill[name] = { dealt: 0, healed: 0 });
+      r[key] += amt;
+    }
+
+    applyLoss(dst, dmg, src, label) {
       dmg = Math.min(dmg, dst.hp);
       dst.hp -= dmg;
       dst.rec.taken += dmg;
-      if (src && src.side !== dst.side) src.rec.dealt += dmg;
+      if (src && src.side !== dst.side) { src.rec.dealt += dmg; if (label) this.record(src, label, 'dealt', dmg); }
       if (dst.hp <= 0) {
         dst.dead = true;
         this.log(`${this.tag(dst)} 쓰러짐`);
@@ -362,10 +369,11 @@
       if (amt <= 0) return;
       dst.hp += amt;
       src.rec.healed += amt;
+      this.record(src, label, 'healed', amt);
       this.log(`${this.tag(src)}의 ${label} → ${this.tag(dst)} ${amt} 회복${dst.status.injury ? ' (내상으로 반감)' : ''}`);
     }
 
-    proc(u, s) { u.rec.procs[s.id] = (u.rec.procs[s.id] || 0) + 1; }
+    proc(u, s) { u.rec.procs[s.id] = (u.rec.procs[s.id] || 0) + 1; this.acting = s.name; }
 
     // --- 진행 ---
     run() {
@@ -401,7 +409,7 @@
       for (const k of ['poison', 'bleed']) {
         const st = u.status[k];
         if (st && !u.dead) {
-          this.applyLoss(u, st.tick, null);
+          this.applyLoss(u, st.tick, st.src, st.label); // 지속 피해는 건 무공의 피해로 집계
           this.log(`${this.tag(u)}: ${STATUS_NAMES[k]} ${st.tick} 피해 (남은 체력 ${u.hp})`);
         }
       }
@@ -478,9 +486,13 @@
       if (r.reason === 'hp') agg.byHp++;
       agg.rounds += r.rounds;
       r.units.forEach((u, j) => {
-        const a = agg.units[j] || (agg.units[j] = { side: u.side, pos: u.pos, name: u.name, dealt: 0, healed: 0, taken: 0, deaths: 0, procs: {} });
+        const a = agg.units[j] || (agg.units[j] = { side: u.side, pos: u.pos, name: u.name, dealt: 0, healed: 0, taken: 0, deaths: 0, procs: {}, bySkill: {} });
         a.dealt += u.rec.dealt; a.healed += u.rec.healed; a.taken += u.rec.taken; a.deaths += u.dead ? 1 : 0;
         for (const [k, v] of Object.entries(u.rec.procs)) a.procs[k] = (a.procs[k] || 0) + v;
+        for (const [k, v] of Object.entries(u.rec.bySkill)) {
+          const t = a.bySkill[k] || (a.bySkill[k] = { dealt: 0, healed: 0 });
+          t.dealt += v.dealt; t.healed += v.healed;
+        }
       });
     }
     agg.n = n;

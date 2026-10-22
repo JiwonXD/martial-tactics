@@ -255,7 +255,14 @@ footer { font-size: 12px; color: var(--ink-soft); }
     const maxDealt = Math.max(...r.units.map(u => u.dealt));
     const rows = r.units.map(u => {
       const w = Math.round(u.dealt / maxDealt * 80);
-      const procs = Object.entries(u.procs).map(([id, c]) => `${S.SKILL[id].name} ${(c / n).toFixed(1)}`).join(', ') || '없음';
+      // 무공별: 발동 횟수, 피해, 회복 (판당 평균). 개전·상시·진법은 발동 대신 효과만 쌓인다.
+      const names = [...new Set([...Object.keys(u.procs).map(id => S.SKILL[id].name), ...Object.keys(u.bySkill)])];
+      const nameToId = Object.fromEntries(S.SKILLS.map(s => [s.name, s.id]));
+      const procs = names.map(name => {
+        const c = u.procs[nameToId[name]], v = u.bySkill[name] || { dealt: 0, healed: 0 };
+        const parts = [c ? `${(c / n).toFixed(1)}회` : '', v.dealt ? `피해 ${Math.round(v.dealt / n).toLocaleString()}` : '', v.healed ? `회복 ${Math.round(v.healed / n).toLocaleString()}` : ''].filter(Boolean);
+        return parts.length ? `${name} ${parts.join(' · ')}` : '';
+      }).filter(Boolean).join('<br>') || '없음';
       return `<tr data-side="${u.side}"><td>${NAMES[u.side]}</td><td>${S.POS_NAMES[u.pos]} ${u.name}</td>
         <td>${Math.round(u.dealt / n).toLocaleString()}<span class="dealt-bar" style="width:${w}px;--side-color:var(${u.side === 'A' ? '--jade' : '--crimson'})"></span></td>
         <td>${Math.round(u.healed / n).toLocaleString()}</td><td>${Math.round(u.taken / n).toLocaleString()}</td><td>${pct(u.deaths, n)}</td>
@@ -271,7 +278,7 @@ footer { font-size: 12px; color: var(--ink-soft); }
       </div>
       <div class="legend"><span><i style="background:var(--jade)"></i>아군 승 ${r.A}</span><span><i style="background:var(--draw)"></i>무승부 ${r.draw}</span><span><i style="background:var(--crimson)"></i>상대 승 ${r.B}</span></div>
       <div class="table-wrap"><table>
-        <thead><tr><th>팀</th><th>무인</th><th>평균 피해</th><th>평균 회복</th><th>받은 피해</th><th>쓰러짐</th><th>판당 무공 발동 횟수</th></tr></thead>
+        <thead><tr><th>팀</th><th>무인</th><th>평균 피해</th><th>평균 회복</th><th>받은 피해</th><th>쓰러짐</th><th>무공별 발동·피해·회복 (판당)</th></tr></thead>
         <tbody>${rows}</tbody></table></div>`;
   }
 
