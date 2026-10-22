@@ -25,6 +25,7 @@
     taunt: '도발', poison: '중독', bleed: '출혈', injury: '내상', guard: '호위',
   };
   const DEBUFFS = ['stun', 'confuse', 'silence', 'disarm', 'poison', 'bleed', 'injury'];
+  const CONTROLS = ['stun', 'confuse', 'silence', 'disarm']; // 두전성이가 되돌리는 제어
 
   // ---------- 무공 ----------
   // 모든 무공은 어느 한 무인의 무공이다. 추출하면 다른 무인의 무공창 2·3칸에 넣을 수 있다.
@@ -144,6 +145,26 @@
         b.addStatus(u, leader, 'guard', 4);
         if (leader.status.guard) Object.assign(leader.status.guard, { by: u, ratio: 0.3 });
       } },
+    { id: 'dujeon', name: '두전성이', type: 'passive',
+      desc: '자신이 주장이면, 적이 아군에게 점혈·혼란·봉인·무장해제를 걸 때 건 적에게도 똑같이 건다',
+      setup: (b, u) => { if (u.pos === 0) u.reflect = true; } },
+    { id: 'sajung', name: '사중구활', type: 'passive',
+      desc: '매 합 시작 시 아군 체력 비율이 적보다 낮으면 아군 전체 주는 피해 +15%, 높으면 아군 전체 받는 피해 -10% (그 합 동안)',
+      setup: (b, u) => u.hooks.roundStart.push(() => {
+        const mine = b.teamRatio(u.side), theirs = b.teamRatio(u.side === 'A' ? 'B' : 'A');
+        b.allies(u).forEach(a => { a.mods = a.mods.filter(m => m.label !== '사중구활'); }); // 지난 합 효과 해제
+        if (mine === theirs) return;
+        const [key, value, text] = mine < theirs ? ['dealt', 0.15, '주는 피해 +15%'] : ['taken', -0.1, '받는 피해 -10%'];
+        b.allies(u).forEach(a => b.addMod(a, key, value, Infinity, '사중구활'));
+        b.log(`${b.tag(u)}의 사중구활: 체력 비율이 ${mine < theirs ? '낮아' : '높아'} 아군 전체 ${text}`);
+      }) },
+    { id: 'hyeolmaek', name: '혈맥상통', type: 'passive',
+      desc: '3합부터 자신이 무기 피해를 줄 때마다 체력 비율이 가장 낮은 아군이 그 피해의 20%를 회복',
+      setup: (b, u) => u.hooks.dealt.push((dmg, kind) => {
+        if (b.round < 3 || kind !== 'ext') return;
+        const t = b.allies(u).sort((x, y) => x.hp / x.maxHp - y.hp / y.maxHp)[0];
+        b.healFlat(u, t, dmg * 0.2, '혈맥상통');
+      }) },
     { id: 'gwangpung', name: '광풍쾌검', type: 'passive',
       desc: '무기 피해 치명타 확률 +25% (치명타 시 1.5배)',
       setup: (b, u) => b.addMod(u, 'crit', 0.25, Infinity, '광풍쾌검') },
@@ -179,6 +200,9 @@
     { id: 'sahyeol', name: '사혈귀', title: '혈수당주', faction: '마교', hp: 2900, ext: 200, int: 100, def: 120, spd: 175, apt: 'BSACA', skill: 'talmyeong' },
     { id: 'jangsam', name: '장삼', title: '금나귀수', faction: '사파', hp: 3000, ext: 180, int: 120, def: 140, spd: 165, apt: 'ABSBA', skill: 'geumna' },
     { id: 'cheolwi', name: '철위강', title: '호위대장', faction: '세가', hp: 3800, ext: 140, int: 100, def: 210, spd: 90, apt: 'BBSAA', skill: 'howi' },
+    { id: 'moyongyeon', name: '모용연', title: '두전성이 전인', faction: '세가', hp: 3000, ext: 120, int: 195, def: 140, spd: 150, apt: 'ABBSA', skill: 'dujeon' },
+    { id: 'dokgo', name: '독고패', title: '낭인검귀', faction: '사파', hp: 3100, ext: 205, int: 110, def: 130, spd: 155, apt: 'SABCB', skill: 'sajung' },
+    { id: 'baengni', name: '백리청', title: '의협', faction: '정파', hp: 3100, ext: 190, int: 130, def: 140, spd: 145, apt: 'ASBBA', skill: 'hyeolmaek' },
     { id: 'jegal', name: '제갈운', title: '신의', faction: '세가', hp: 2800, ext: 80, int: 190, def: 120, spd: 140, apt: 'ABASB', skill: 'hoechun' },
   ];
   const UNIT = Object.fromEntries(UNITS.map(u => [u.id, u]));
@@ -240,7 +264,7 @@
           apt: d.apt[ei],
           skills: [d.skill, ...s.skills.filter(Boolean)].map(id => SKILL[id]),
           status: {}, mods: [], immune: new Set(), prep: null,
-          hooks: { roundStart: [], damaged: [] },
+          hooks: { roundStart: [], damaged: [], dealt: [] },
           rec: { dealt: 0, healed: 0, taken: 0, procs: {}, bySkill: {} },
         };
       });
@@ -296,7 +320,7 @@
       u.mods.push({ key, value, rounds, label, since: this.turnSeq });
     }
 
-    addStatus(src, dst, key, rounds, dot) {
+    addStatus(src, dst, key, rounds, dot, reflected) {
       if (dst.dead) return;
       if (dst.immune.has(key)) { this.log(`${this.tag(dst)}: ${STATUS_NAMES[key]} 면역`); return; }
       if (dst.status[key]) return; // 같은 종류는 중첩되지 않음
@@ -304,6 +328,10 @@
       if (dot) Object.assign(entry, { tick: Math.round(this.rawDamage(src, dst, dot.kind, dot.coef)), src, label: this.acting });
       dst.status[key] = entry;
       this.log(`${this.tag(dst)}: ${STATUS_NAMES[key]} (${rounds}합)`);
+      if (!reflected && CONTROLS.includes(key) && src.side !== dst.side && !src.dead) {
+        const r = this.allies(dst).find(a => a.reflect);
+        if (r && !src.status[key]) { this.log(`${this.tag(r)}의 두전성이: ${STATUS_NAMES[key]}를 되돌림`); this.addStatus(r, src, key, rounds, null, true); }
+      }
     }
 
     rawDamage(src, dst, kind, coef) {
@@ -339,6 +367,7 @@
       this.applyLoss(dst, dmg, src, label);
       this.log(`${this.tag(src)}의 ${label}${crit ? ' (치명타)' : ''} → ${this.tag(dst)} ${dmg} 피해 (${kind === 'ext' ? '무기' : '내공'}, 남은 체력 ${dst.hp})`);
       if (!dst.dead && !opts.counter) dst.hooks.damaged.forEach(h => h(src, { normal: !!opts.normal, kind }));
+      if (src.side !== dst.side && !src.dead) src.hooks.dealt.forEach(h => h(dmg, kind));
       return dmg;
     }
 
@@ -371,6 +400,23 @@
       src.rec.healed += amt;
       this.record(src, label, 'healed', amt);
       this.log(`${this.tag(src)}의 ${label} → ${this.tag(dst)} ${amt} 회복${dst.status.injury ? ' (내상으로 반감)' : ''}`);
+    }
+
+    // 계산된 양을 그대로 회복 (난수 없음). 내상이면 반감.
+    healFlat(src, dst, amt, label) {
+      if (dst.dead || this.over) return;
+      if (dst.status.injury) amt *= 0.5;
+      amt = Math.min(Math.round(amt), dst.maxHp - dst.hp);
+      if (amt <= 0) return;
+      dst.hp += amt;
+      src.rec.healed += amt;
+      this.record(src, label, 'healed', amt);
+      this.log(`${this.tag(src)}의 ${label} → ${this.tag(dst)} ${amt} 회복${dst.status.injury ? ' (내상으로 반감)' : ''}`);
+    }
+
+    teamRatio(side) {
+      const us = this.units.filter(u => u.side === side);
+      return us.reduce((s, u) => s + u.hp, 0) / us.reduce((s, u) => s + u.maxHp, 0);
     }
 
     proc(u, s) { u.rec.procs[s.id] = (u.rec.procs[s.id] || 0) + 1; this.acting = s.name; }
@@ -467,11 +513,7 @@
       if (leaderDead.A !== leaderDead.B) { winner = leaderDead.A ? 'B' : 'A'; reason = 'leader'; }
       else {
         // 8합 종료: 팀의 남은 체력 비율(남은 체력 합 ÷ 최대 체력 합)이 높은 쪽 승리, 같으면 무승부
-        const ratio = side => {
-          const us = this.units.filter(u => u.side === side);
-          return us.reduce((s, u) => s + u.hp, 0) / us.reduce((s, u) => s + u.maxHp, 0);
-        };
-        const a = ratio('A'), b = ratio('B');
+        const a = this.teamRatio('A'), b = this.teamRatio('B');
         if (a !== b) { winner = a > b ? 'A' : 'B'; reason = 'hp'; }
       }
       return { winner, reason, rounds, units: this.units, log: this.lines };

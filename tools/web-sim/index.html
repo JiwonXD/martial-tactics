@@ -166,6 +166,8 @@ footer { font-size: 12px; color: var(--ink-soft); }
       { unit: 'namgung', skills: ['cheongryong', 'gwangpung'] }, { unit: 'dang', skills: ['jeomhyeol', 'sangong'] }, { unit: 'nameless', skills: ['saja', 'bantan'] } ] } },
     dol: { label: '세가·마교·사파 (주장 저격)', team: { element: '금', slots: [
       { unit: 'paeng', skills: ['bukdu', 'gwangpung'] }, { unit: 'sahyeol', skills: ['hyeolma', 'changgung'] }, { unit: 'jangsam', skills: ['naesang', 'ildo'] } ] } },
+    ref: { label: '세가·정파·사파 (제어 반사)', team: { element: '수', slots: [
+      { unit: 'moyongyeon', skills: ['hyeonmu', 'hoechun'] }, { unit: 'baengni', skills: ['changgung', 'bantan'] }, { unit: 'dokgo', skills: ['saja', 'naesang'] } ] } },
   };
   const clone = t => JSON.parse(JSON.stringify(t));
   const state = { A: clone(PRESETS.jeong.team), B: clone(PRESETS.ma.team) };

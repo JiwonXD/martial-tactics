@@ -76,6 +76,26 @@ assert(jikdo > 0 && guarded > 0 && talExtra > 0 && geumnaStun > 0, JSON.stringif
   assert.strictEqual(l0 - leader.hp, dealt);
   assert(g0 - guard.hp > 0 && Math.abs((g0 - guard.hp) / ((l0 - leader.hp) + (g0 - guard.hp)) - 0.3) < 0.01); }
 
+// 3-3. 두전성이(제어 반사), 사중구활(체력 비율 비교), 혈맥상통(피해 → 체력 최저 아군 회복)
+{
+  const 반사 = { element: '수', slots: [
+    { unit: 'moyongyeon', skills: ['hyeonmu', 'hoechun'] }, { unit: 'baengni', skills: ['changgung', 'bantan'] }, { unit: 'dokgo', skills: ['saja', 'naesang'] } ] };
+  const 제어 = { element: '화', slots: [
+    { unit: 'so', skills: ['jujak', 'mandok'] }, { unit: 'hahu', skills: ['geumna', 'gwangpung'] }, { unit: 'ma', skills: ['ildo', 'geumgang'] } ] };
+  assert.deepStrictEqual(S.validateTeam(반사), []);
+  assert.deepStrictEqual(S.validateTeam(제어), []);
+  let reflect = 0, sajung = 0, hyeolmaek = 0, early = 0;
+  for (let seed = 1; seed <= 300; seed++) {
+    const r = new S.Battle(반사, 제어, { seed, log: true }).run();
+    r.log.forEach((l, i) => {
+      if (l.text.includes('의 두전성이:')) { reflect++; assert(r.log[i + 1].text.startsWith('[적]') || r.log[i + 1].text.includes('면역')); }
+      if (l.text.includes('의 사중구활:')) sajung++;
+      if (l.text.includes('의 혈맥상통 →')) { hyeolmaek++; if (l.round < 3) early++; }
+    });
+  }
+  assert(reflect > 0 && sajung > 0 && hyeolmaek > 0 && early === 0, JSON.stringify({ reflect, sajung, hyeolmaek, early }));
+}
+
 // 4. 승패 판정: 주장이 쓰러진 쪽이 진다, 무승부는 주장 둘 다 생존
 let leaderChecks = 0, stunImmune = 0, hpJudged = 0;
 for (let seed = 1; seed <= 3000; seed++) {
