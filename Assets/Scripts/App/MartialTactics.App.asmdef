@@ -1,0 +1,17 @@
+{
+    "name": "MartialTactics.App",
+    "rootNamespace": "MartialTactics.App",
+    "references": [
+        "MartialTactics.Battle",
+        "MartialTactics.Game"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
