@@ -33,6 +33,7 @@ namespace MartialTactics.Battle
     {
         public string Unit;
         public string[] Skills; // 무공창 2·3칸 (null = 비움)
+        public UnitDef Def;     // 승급 스탯을 더한 무인 정보 (null = Catalog 기본값)
     }
 
     /// <summary>Slots[0] = 주장.</summary>

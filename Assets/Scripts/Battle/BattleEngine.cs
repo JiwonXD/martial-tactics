@@ -128,14 +128,14 @@ namespace MartialTactics.Battle
 
         List<Unit> BuildSide(Side side, Team team)
         {
-            var defs = team.Slots.Select(s => Catalog.Unit[s.Unit]).ToList();
+            var defs = team.Slots.Select(s => s.Def ?? Catalog.Unit[s.Unit]).ToList();
             bool sameFaction = defs.All(d => d.Faction == defs[0].Faction);
             int ei = Array.IndexOf(BattleRules.Elements, team.Element);
             var list = new List<Unit>();
             for (int pos = 0; pos < team.Slots.Length; pos++)
             {
                 var s = team.Slots[pos];
-                var d = Catalog.Unit[s.Unit];
+                var d = defs[pos];
                 double aptMult = BattleRules.AptMult[d.Apt[ei]];
                 double mult = aptMult * (sameFaction ? 1 + Config.FactionBonus : 1);
                 var skills = new List<SkillDef> { Catalog.Skill[d.Skill] };
