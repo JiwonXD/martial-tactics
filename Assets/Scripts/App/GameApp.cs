@@ -17,6 +17,7 @@ namespace MartialTactics.App
 
         const float RevealDelay = 0.8f; // 전투 기록을 한 합씩 보여 주는 간격(초)
         const string Gold = "#e8c050", Red = "#e05050", Green = "#7fd07f", Gray = "#9a948a";
+        static readonly Color Background = new Color(0.12f, 0.11f, 0.10f);
 
         static GameApp instance;
 
@@ -45,7 +46,7 @@ namespace MartialTactics.App
                 var cam = new GameObject("Main Camera").AddComponent<Camera>();
                 cam.tag = "MainCamera";
                 cam.clearFlags = CameraClearFlags.SolidColor;
-                cam.backgroundColor = new Color(0.12f, 0.11f, 0.10f);
+                cam.backgroundColor = Background;
             }
             var go = new GameObject("GameApp");
             DontDestroyOnLoad(go);
@@ -85,6 +86,11 @@ namespace MartialTactics.App
             float scale = Mathf.Min(Screen.width / 540f, Screen.height / 960f);
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1));
             float vw = Screen.width / scale, vh = Screen.height / scale, w = Mathf.Min(vw - 16, 640);
+
+            // 씬 배경(하늘 등) 위에서도 글씨가 읽히게 화면 전체를 어둡게 깐다
+            GUI.color = Background;
+            GUI.DrawTexture(new Rect(0, 0, vw, vh), Texture2D.whiteTexture);
+            GUI.color = Color.white;
 
             GUILayout.BeginArea(new Rect((vw - w) / 2, 8, w, vh - 16));
             if (page != Page.Home)
@@ -382,8 +388,7 @@ namespace MartialTactics.App
         void BattleLog()
         {
             bool done = shownRound >= result.Rounds;
-            if (done) ResultHeader();
-            else Button("전부 보기", () => shownRound = result.Rounds);
+            if (!done) Button("전부 보기", () => { shownRound = result.Rounds; scroll.y = float.MaxValue; });
 
             foreach (var l in result.Log.Where(l => l.Round <= shownRound))
             {
@@ -393,6 +398,7 @@ namespace MartialTactics.App
 
             if (!done) return;
             GUILayout.Space(12);
+            ResultHeader();
             Button("같은 상대와 다시", () => result = null);
             Button("새 상대", () => { opponent = null; result = null; });
         }
