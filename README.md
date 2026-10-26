@@ -1,6 +1,8 @@
 # martial-tactics
 
-무협 세계관 3인 팀 자동 전투 카드배틀 (Unity).
+무협 세계관 3인 팀 자동 전투 카드배틀 (Unity 6.3 LTS, 6000.3.27f1).
+
+Unity Hub → Add → 이 폴더를 열면 된다. 처음 열 때 Unity가 만드는 `ProjectSettings/`, `Packages/`, `.meta` 파일은 커밋한다.
 
 ## 전투 엔진
 
