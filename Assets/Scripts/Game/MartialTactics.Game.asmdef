@@ -1,0 +1,16 @@
+{
+    "name": "MartialTactics.Game",
+    "rootNamespace": "MartialTactics.Game",
+    "references": [
+        "MartialTactics.Battle"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

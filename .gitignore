@@ -11,6 +11,8 @@
 [Uu]ser[Ss]ettings/
 /*.csproj
 /*.sln
+/*.slnx
+.vs/
 *.user
 *.pidb
 *.booproj
