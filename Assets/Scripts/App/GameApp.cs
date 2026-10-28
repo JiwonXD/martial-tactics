@@ -8,14 +8,14 @@ using UnityEngine;
 namespace MartialTactics.App
 {
     /// <summary>
-    /// 기능 확인용 화면 (IMGUI). 씬에 아무것도 없어도 Play하면 스스로 생긴다.
-    /// 화면: 처음 → 뽑기 / 무인 목록 → 무인 창 → 무공 고르기 / 덱 편성 → 무인 고르기 / 전투
+    /// 게임 화면. 씬에 아무것도 없어도 Play하면 스스로 생긴다.
+    /// 화면: 처음 → 뽑기 / 무인 목록 → 무인 상세 → 무공 고르기·승급/추출 / 덱 편성 → 무인 고르기 / 전투 준비 → 전투 → 결과
+    /// 확정된 화면(무인 상세, 전투, 결과)은 UI Toolkit(UiRoot), 나머지는 아직 기능 확인용 IMGUI.
     /// </summary>
     public sealed class GameApp : MonoBehaviour
     {
-        enum Page { Home, Gacha, Units, UnitDetail, SkillPick, Deck, DeckPick, Battle }
+        enum Page { Home, Gacha, Units, UnitDetail, SkillPick, CardUse, Deck, DeckPick, Battle, BattlePlay, Result }
 
-        const float RevealDelay = 0.8f; // 전투 기록을 한 합씩 보여 주는 간격(초)
         const string Gold = "#e8c050", Red = "#e05050", Green = "#7fd07f", Gray = "#9a948a";
         static readonly Color Background = new Color(0.12f, 0.11f, 0.10f);
 
@@ -32,8 +32,10 @@ namespace MartialTactics.App
         List<DrawResult> lastDraw = new List<DrawResult>();
         Team opponent;
         BattleResult result;
-        int shownRound;
-        float nextReveal;
+
+        UiRoot ui;
+        BattleScreen battle;
+        bool uiDirty;
 
         GUIStyle label, small, title, button;
 
@@ -53,7 +55,11 @@ namespace MartialTactics.App
             instance = go.AddComponent<GameApp>();
         }
 
-        void Awake() => game = new GameState(SaveStore.Load(), Environment.TickCount);
+        void Awake()
+        {
+            game = new GameState(SaveStore.Load(), Environment.TickCount);
+            ui = new UiRoot(transform);
+        }
 
         void Save() => SaveStore.Save(game.Data);
 
@@ -70,18 +76,48 @@ namespace MartialTactics.App
             page = p;
             scroll = Vector2.zero;
             confirmReset = false;
+            uiDirty = true;
         }
 
         void Update()
         {
-            if (result == null || shownRound >= result.Rounds || Time.time < nextReveal) return;
-            shownRound++;
-            nextReveal = Time.time + RevealDelay;
-            scroll.y = float.MaxValue;
+            if (uiDirty) SyncUi();
+            if (page == Page.BattlePlay) battle?.Tick(Time.deltaTime);
+        }
+
+        // 지금 페이지가 UI Toolkit 화면이면 새로 만들어 띄우고, 아니면 내린다
+        void SyncUi()
+        {
+            uiDirty = false;
+            battle = null;
+            switch (page)
+            {
+                case Page.UnitDetail:
+                    var u = game.Find(unitId);
+                    if (u == null) { ui.Hide(); return; }
+                    ui.Show(UnitDetailScreen.Build(game, u,
+                        back: () => Go(Page.Units),
+                        pickSkill: s => { slot = s; Go(Page.SkillPick); },
+                        cardUse: () => Go(Page.CardUse)));
+                    break;
+                case Page.BattlePlay:
+                    battle = new BattleScreen(result, () => Go(Page.Result));
+                    ui.Show(battle.Root);
+                    break;
+                case Page.Result:
+                    ui.Show(ResultScreen.Build(result, game.Data.Deck.Element, opponent.Element,
+                        replay: () => Go(Page.BattlePlay),
+                        confirm: () => { result = null; Go(Page.Battle); }));
+                    break;
+                default:
+                    ui.Hide();
+                    break;
+            }
         }
 
         void OnGUI()
         {
+            if (ui.Visible || uiDirty) return;
             EnsureStyles();
             float scale = Mathf.Min(Screen.width / 540f, Screen.height / 960f);
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1));
@@ -106,11 +142,11 @@ namespace MartialTactics.App
                 case Page.Home: HomePage(); break;
                 case Page.Gacha: GachaPage(); break;
                 case Page.Units: UnitsPage(); break;
-                case Page.UnitDetail: UnitDetailPage(); break;
                 case Page.SkillPick: SkillPickPage(); break;
+                case Page.CardUse: CardUsePage(); break;
                 case Page.Deck: DeckPage(); break;
                 case Page.DeckPick: DeckPickPage(); break;
-                case Page.Battle: BattlePage(); break;
+                case Page.Battle: BattleReady(); break;
             }
             GUILayout.EndScrollView();
             GUILayout.EndArea();
@@ -122,8 +158,8 @@ namespace MartialTactics.App
             {
                 case Page.Gacha: return "뽑기";
                 case Page.Units: return "무인";
-                case Page.UnitDetail: return "무인 창";
                 case Page.SkillPick: return $"무공 고르기 ({slot + 2}칸)";
+                case Page.CardUse: return "승급 · 무공 추출";
                 case Page.Deck: return "덱 편성";
                 case Page.DeckPick: return $"무인 고르기 ({BattleRules.PosNames[deckPos]})";
                 case Page.Battle: return "전투";
@@ -201,16 +237,16 @@ namespace MartialTactics.App
             }
         }
 
-        void UnitDetailPage()
+        // 무인 상세의 "승급 / 무공 추출"과 "배분" 버튼이 오는 곳. 화면 설계가 아직 없어 기능 확인용으로 둔다
+        void CardUsePage()
         {
             var u = game.Find(unitId);
             if (u == null) return;
             var d = Catalog.Unit[u.Id];
             int stars = GameState.Stars(u.Id);
+            Button("← 무인 상세", () => Go(Page.UnitDetail));
 
-            GUILayout.Label($"{Stars(u.Id, u.Promotions)}  <b>{d.Name}</b>  {d.Title}", title);
-            GUILayout.Label($"{GameState.Rank(stars)} · {d.Faction} · 승급 {u.Promotions}/{stars}", small);
-            GUILayout.Label($"체력 {d.Hp}", label);
+            GUILayout.Label($"{Stars(u.Id, u.Promotions)}  <b>{d.Name}</b>  승급 {u.Promotions}/{stars}", label);
             int[] baseStats = { d.Ext, d.Int, d.Def, d.Spd };
             for (int k = 0; k < 4; k++)
             {
@@ -221,21 +257,6 @@ namespace MartialTactics.App
                 GUILayout.EndHorizontal();
             }
             if (u.FreePoints > 0) GUILayout.Label($"<color={Gold}>남은 자유 스탯 {u.FreePoints}</color>", label);
-            GUILayout.Label("적성  " + string.Join("  ", BattleRules.Elements.Select((e, i) => $"{e} {d.Apt[i]}")), label);
-
-            GUILayout.Space(12);
-            GUILayout.Label("<b>무공</b>", label);
-            SkillLine(Catalog.Skill[d.Skill], "1칸 고유");
-            for (int i = 0; i < 2; i++)
-            {
-                var s = game.FindSkill(u.Equipped[i]);
-                if (s != null) SkillLine(Catalog.Skill[s.Skill], $"{i + 2}칸");
-                else GUILayout.Label($"[{i + 2}칸] <color={Gray}>비어 있음</color>", label);
-                GUILayout.BeginHorizontal();
-                Button(s == null ? "장착" : "바꾸기", () => { slot = i; Go(Page.SkillPick); });
-                if (s != null) Button("빼기", () => { game.Unequip(u, i); Save(); });
-                GUILayout.EndHorizontal();
-            }
 
             GUILayout.Space(12);
             GUILayout.Label($"<b>중복 카드 {u.Spare}장</b> — 승급 또는 무공 추출에 씁니다", label);
@@ -251,8 +272,10 @@ namespace MartialTactics.App
         {
             var u = game.Find(unitId);
             if (u == null) return;
-            Button("← 무인 창", () => Go(Page.UnitDetail));
-            if (game.Data.Skills.Count == 0) GUILayout.Label("추출한 무공이 없습니다. 무인 창에서 중복 카드로 무공을 추출하세요.", label);
+            Button("← 무인 상세", () => Go(Page.UnitDetail));
+            if (game.FindSkill(u.Equipped[slot]) != null)
+                Button("이 칸 비우기", () => { game.Unequip(u, slot); Save(); Go(Page.UnitDetail); });
+            if (game.Data.Skills.Count == 0) GUILayout.Label("추출한 무공이 없습니다. 무인 상세에서 중복 카드로 무공을 추출하세요.", label);
             foreach (var s in game.Data.Skills)
             {
                 var def = Catalog.Skill[s.Skill];
@@ -269,12 +292,6 @@ namespace MartialTactics.App
                 GUI.enabled = true;
                 GUILayout.Label(err != null ? $"<color={Red}>{err}</color>" : def.Desc, small);
             }
-        }
-
-        void SkillLine(SkillDef s, string slotName)
-        {
-            GUILayout.Label($"[{slotName}] <b>{s.Name}</b> ({SkillTag(s)})", label);
-            GUILayout.Label(s.Desc, small);
         }
 
         static string SkillTag(SkillDef s) => BattleRules.TypeNames[s.Type] + (s.Rate > 0 ? $" {s.Rate}%" : "");
@@ -342,12 +359,6 @@ namespace MartialTactics.App
 
         // --- 전투 ---
 
-        void BattlePage()
-        {
-            if (result == null) BattleReady();
-            else BattleLog();
-        }
-
         void BattleReady()
         {
             var errors = game.ValidateDeck();
@@ -367,8 +378,7 @@ namespace MartialTactics.App
             Button("전투 시작", () =>
             {
                 result = game.Fight(opponent);
-                shownRound = 0;
-                nextReveal = Time.time + RevealDelay;
+                Go(Page.BattlePlay);
             });
             Button("새 상대", () => opponent = null);
         }
@@ -383,47 +393,6 @@ namespace MartialTactics.App
                 var skills = new[] { d.Skill }.Concat(s.Skills.Where(id => !string.IsNullOrEmpty(id))).Select(id => Catalog.Skill[id].Name);
                 GUILayout.Label($"{BattleRules.PosNames[i]} {d.Name} — {string.Join(", ", skills)}", small);
             }
-        }
-
-        void BattleLog()
-        {
-            bool done = shownRound >= result.Rounds;
-            if (!done) Button("전부 보기", () => { shownRound = result.Rounds; scroll.y = float.MaxValue; });
-
-            foreach (var l in result.Log.Where(l => l.Round <= shownRound))
-            {
-                bool header = l.Text == "준비 합" || l.Text == $"{l.Round}합";
-                GUILayout.Label(header ? $"<b><color={Gold}>{l.Text}</color></b>" : l.Text, header ? label : small);
-            }
-
-            if (!done) return;
-            GUILayout.Space(12);
-            ResultHeader();
-            Button("같은 상대와 다시", () => result = null);
-            Button("새 상대", () => { opponent = null; result = null; });
-        }
-
-        void ResultHeader()
-        {
-            string verdict = result.Winner == Side.A ? $"<color={Gold}>승리</color>"
-                : result.Winner == Side.B ? $"<color={Red}>패배</color>" : "무승부";
-            double a = Ratio(Side.A), b = Ratio(Side.B);
-            string why = result.Reason == "leader"
-                ? (result.Winner == Side.A ? "적 주장 격파" : "아군 주장이 쓰러짐")
-                : $"{result.Rounds}합 종료 · 남은 체력 비율 {a:P0} : {b:P0}";
-            GUILayout.Label($"<b>{verdict}</b>  {why}", title);
-            foreach (var u in result.Units)
-            {
-                string hp = u.Dead ? $"<color={Red}>쓰러짐</color>" : $"{u.Hp}/{u.MaxHp}";
-                GUILayout.Label($"[{(u.Side == Side.A ? "아" : "적")}] {BattleRules.PosNames[u.Pos]} {u.Name}  {hp}", small);
-            }
-            GUILayout.Space(8);
-        }
-
-        double Ratio(Side side)
-        {
-            var units = result.Units.Where(u => u.Side == side).ToList();
-            return (double)units.Sum(u => u.Hp) / units.Sum(u => u.MaxHp);
         }
 
         // --- 표시 ---
