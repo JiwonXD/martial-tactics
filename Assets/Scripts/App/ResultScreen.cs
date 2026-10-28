@@ -25,6 +25,7 @@ namespace MartialTactics.App
             var log = new ScrollView(ScrollViewMode.Vertical);
             foreach (var sv in new[] { summary, log })
             {
+                sv.verticalScrollerVisibility = ScrollerVisibility.Hidden;
                 sv.style.flexGrow = 1;
                 sv.style.paddingLeft = 16;
                 sv.style.paddingRight = 16;

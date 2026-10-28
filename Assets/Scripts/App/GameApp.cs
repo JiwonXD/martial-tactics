@@ -61,6 +61,8 @@ namespace MartialTactics.App
             ui = new UiRoot(transform);
         }
 
+        void OnApplicationQuit() => ui.Shutdown();
+
         void Save() => SaveStore.Save(game.Data);
 
         // 누르면 상태를 바꾸고 이번 GUI 이벤트를 끝낸다 (같은 이벤트 안에서 화면 구성이 바뀌어 IMGUI 레이아웃이 어긋나지 않게)

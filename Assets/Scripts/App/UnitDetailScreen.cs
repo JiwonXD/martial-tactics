@@ -18,7 +18,7 @@ namespace MartialTactics.App
             var top = Ui.El("topbar").Add(Ui.Btn("←", back, "back"), Ui.Lb("무인 상세", "title"));
             screen.Add(top);
 
-            var scroll = new ScrollView(ScrollViewMode.Vertical);
+            var scroll = new ScrollView(ScrollViewMode.Vertical) { verticalScrollerVisibility = ScrollerVisibility.Hidden };
             scroll.style.flexGrow = 1;
             screen.Add(scroll);
 
@@ -102,6 +102,7 @@ namespace MartialTactics.App
             bottom.Add(Ui.El().Add(Ui.Lb("중복 카드", "lb"), Ui.Lb($"{u.Spare}장", "b")), Ui.El("grow"));
             var use = Ui.Btn("승급 / 무공 추출", cardUse, "btn", "pri");
             use.style.width = 200;
+            use.SetEnabled(u.Spare > 0); // 승급·추출 둘 다 중복 카드가 있어야 한다
             bottom.Add(use);
             screen.Add(bottom);
             return screen;

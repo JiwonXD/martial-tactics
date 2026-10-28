@@ -76,7 +76,6 @@ namespace MartialTactics.App
             var arena = Ui.El("arena");
             units = new UnitView[result.Units.Count];
             var foeRow = TeamRow(Side.B, "team");
-            foeRow.style.marginTop = 36;
             banner = Ui.El("banner");
             bannerSide = Ui.Lb("", "lb");
             bannerSide.style.color = new StyleColor(new UnityEngine.Color(1, 1, 1, 0.8f));
@@ -84,8 +83,6 @@ namespace MartialTactics.App
             bannerText = Ui.Lb("", "b");
             bannerText.style.fontSize = 17;
             banner.Add(bannerSide, bannerText);
-            banner.style.marginTop = 24;
-            banner.style.marginBottom = 24;
             banner.style.visibility = Visibility.Hidden;
             var allyRow = TeamRow(Side.A, "team", "ally");
             var speedBox = Ui.El("speed");
@@ -101,7 +98,7 @@ namespace MartialTactics.App
             logRound.style.marginLeft = 8;
             fullToggle = Ui.Btn("전체 보기 ▴", ToggleFull, "btn", "sm", "flat");
             head.Add(Ui.Lb("전투 기록", "b"), logRound, Ui.El("grow"), fullToggle);
-            logBody = new ScrollView(ScrollViewMode.Vertical);
+            logBody = new ScrollView(ScrollViewMode.Vertical) { verticalScrollerVisibility = ScrollerVisibility.Hidden };
             logBody.style.flexGrow = 1;
             logBody.style.paddingLeft = 16;
             logBody.style.paddingRight = 16;
@@ -132,7 +129,8 @@ namespace MartialTactics.App
                 var name = Ui.Lb(leader ? $"{u.Name} · 주장" : u.Name);
                 if (leader) name.AddToClassList("b");
                 name.style.marginTop = 3;
-                v.Root.Add(face, name, v.Bar, v.Chips);
+                // 상대 줄은 시안대로 얼굴 아래 끝을 주장에 맞춘다
+                v.Root.Add(side == Side.B ? Ui.Add(Ui.El("facebox"), face) : face, name, v.Bar, v.Chips);
                 units[i] = v;
                 row.Add(v.Root);
             }

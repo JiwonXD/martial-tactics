@@ -56,6 +56,13 @@ namespace MartialTactics.App
             Visible = false;
         }
 
+        // Play를 끌 때 런타임에 만든 글꼴·패널이 먼저 파괴되면서 남은 글자 그리기가 실패하지 않게, 화면을 먼저 비우고 끈다
+        public void Shutdown()
+        {
+            Hide();
+            doc.gameObject.SetActive(false);
+        }
+
         // 기본 글꼴에 한글이 없을 때를 대비해 OS 한글 글꼴로 글꼴 에셋을 만든다. 출시 전에는 글꼴 파일을 프로젝트에 넣는다.
         static void ApplyKoreanFont(VisualElement root)
         {

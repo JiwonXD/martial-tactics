@@ -40,6 +40,7 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
     padding: 0 10px;
 }
 .btn.flat { border-width: 0; background-color: rgba(0, 0, 0, 0); }
+.btn:disabled { opacity: 0.35; }
 
 .ph {
     background-color: #e7e7e3;
@@ -151,9 +152,11 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .hud-side { flex-grow: 1; flex-basis: 0; }
 .hud-mid { flex-grow: 1; flex-basis: 0; align-items: center; }
 .round { font-size: 22px; -unity-font-style: bold; -unity-text-align: middle-center; }
-.arena { flex-grow: 1; background-color: #efefec; }
-.team { flex-direction: row; justify-content: center; align-items: flex-end; }
-.team.ally { align-items: flex-start; }
+.arena { flex-grow: 1; background-color: #efefec; overflow: hidden; }
+/* 시안대로 줄 위치를 고정해 배너·상태 표시가 생겨도 무인이 움직이지 않게 */
+.team { position: absolute; left: 0; right: 0; top: 36px; flex-direction: row; justify-content: center; align-items: flex-start; }
+.team.ally { top: 296px; }
+.facebox { height: 92px; justify-content: flex-end; align-items: center; }
 .u { width: 96px; align-items: center; margin: 0 6px; }
 .u > Label { -unity-text-align: middle-center; font-size: 12px; }
 .u.dead { opacity: 0.35; }
@@ -171,7 +174,10 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .pop { position: absolute; top: -6px; right: 0; font-size: 18px; -unity-font-style: bold; }
 .pop.heal { font-size: 15px; }
 .banner {
-    margin: 0 24px;
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    top: 218px;
     background-color: #1c1c1a;
     border-radius: 6px;
     padding: 10px 14px;
