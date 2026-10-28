@@ -84,6 +84,8 @@ namespace MartialTactics.Battle
     {
         public int Round;
         public string Text;
+        public int[] Hp;              // 이 줄을 남긴 직후 Units 순서의 체력 (전투 화면 재생용)
+        public StatusKind[][] Status; // 같은 시점의 상태이상
     }
 
     public sealed class BattleResult
@@ -153,7 +155,16 @@ namespace MartialTactics.Battle
         // --- 조회 ---
         public double Rand() => rng.Next();
         public string Tag(Unit u) => $"[{(u.Side == Side.A ? "아" : "적")}] {u.Name}";
-        public void Log(string text) { if (logging) Lines.Add(new LogLine { Round = Round, Text = text }); }
+        public void Log(string text)
+        {
+            if (!logging) return;
+            Lines.Add(new LogLine
+            {
+                Round = Round, Text = text,
+                Hp = Units.Select(u => u.Hp).ToArray(),
+                Status = Units.Select(u => u.Status.Keys.ToArray()).ToArray(),
+            });
+        }
         public List<Unit> Alive(Side side) => Units.Where(u => u.Side == side && !u.Dead).ToList();
         public List<Unit> Allies(Unit u) => Alive(u.Side);
         public List<Unit> Foes(Unit u) => Alive(u.Side == Side.A ? Side.B : Side.A);
