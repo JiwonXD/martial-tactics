@@ -24,9 +24,9 @@ namespace MartialTactics.App
 
             // 일러스트와 겹쳐 놓인 이름 카드
             var head = Ui.El();
-            head.Add(Ui.Placeholder("[무인 일러스트]", -1, 264, "illust"));
+            head.Add(Ui.Placeholder("[무인 일러스트]", -1, 200, "illust"));
             var card = Ui.El("namecard");
-            card.style.top = 180;
+            card.style.top = 116;
             card.Add(Ui.Lb($"{Ui.Stars(u.Id, u.Promotions)}  <color=#5f5f5a>{GameState.Rank(stars)} · 승급 {u.Promotions}/{stars}</color>", "stars"));
             card.Add(Ui.Lb(d.Name, "uname"));
             card.Add(Ui.Lb($"{d.Title} · {d.Faction}", "lb"));
@@ -83,6 +83,20 @@ namespace MartialTactics.App
                 row.RegisterCallback<ClickEvent>(_ => pickSkill(slot));
                 body.Add(row);
             }
+
+            // 장비 (2026-10-28 추가): 칸 이름만 정해졌고 등급·효과·획득은 미정이라 빈 칸만 보인다
+            body.Add(Ui.Lb("장비", "lb", "section"));
+            var gear = Ui.El("grid5");
+            gear.style.marginTop = 6;
+            string[] gearSlots = { "무기", "옷", "신발", "보조" };
+            for (int i = 0; i < gearSlots.Length; i++)
+            {
+                var c = Ui.El("cell", "eq");
+                if (i == 0) c.AddToClassList("first");
+                c.Add(Ui.Lb(gearSlots[i], "b"), Ui.Lb("비어 있음", "lb"));
+                gear.Add(c);
+            }
+            body.Add(gear);
 
             var bottom = Ui.El("bottombar");
             bottom.Add(Ui.El().Add(Ui.Lb("중복 카드", "lb"), Ui.Lb($"{u.Spare}장", "b")), Ui.El("grow"));

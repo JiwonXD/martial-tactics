@@ -79,11 +79,11 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .title { font-size: 17px; -unity-font-style: bold; }
 
 /* 무인 상세 */
-.illust { height: 264px; border-left-width: 0; border-right-width: 0; border-top-width: 0; }
+.illust { height: 200px; border-left-width: 0; border-right-width: 0; border-top-width: 0; }
 .namecard {
     position: absolute;
     left: 16px;
-    top: 236px;
+    top: 116px;
     background-color: #ffffff;
     border-radius: 8px;
     padding: 8px 12px;
@@ -105,6 +105,7 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 }
 .cell.first { margin-left: 0; }
 .cell.apt { align-items: center; padding: 4px 0; }
+.cell.eq { height: 52px; align-items: center; justify-content: center; border-color: #a8a8a2; }
 .v { font-size: 16px; -unity-font-style: bold; }
 .plus { font-size: 11px; color: #2e7d32; }
 .slot {
