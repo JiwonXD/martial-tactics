@@ -25,7 +25,7 @@ namespace MartialTactics.App
             settings.themeStyleSheet = Resources.Load<ThemeStyleSheet>("UI/RuntimeTheme");
             settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
             settings.referenceResolution = Reference;
-            settings.screenMatchMode = PanelScreenMatchMode.Shrink;
+            settings.screenMatchMode = PanelScreenMatchMode.Expand; // 화면 비율이 달라도 390×844보다 작아지지 않게 (남는 쪽이 넓어진다)
 
             var go = new GameObject("UI");
             go.SetActive(false); // panelSettings를 넣은 뒤 켜야 패널이 생긴다
@@ -39,6 +39,9 @@ namespace MartialTactics.App
             root.AddToClassList("app-root");
             ApplyKoreanFont(root);
             Hide();
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeChanged;
+#endif
         }
 
         public void Show(VisualElement screen)
@@ -56,12 +59,16 @@ namespace MartialTactics.App
             Visible = false;
         }
 
-        // Play를 끌 때 런타임에 만든 글꼴·패널이 먼저 파괴되면서 남은 글자 그리기가 실패하지 않게, 화면을 먼저 비우고 끈다
-        public void Shutdown()
+#if UNITY_EDITOR
+        // Play를 끌 때 런타임에 만든 글꼴·패널이 먼저 파괴되면서 남은 글자 그리기가 실패하지 않게, 끄기 시작할 때 화면을 비우고 끈다
+        void OnPlayModeChanged(UnityEditor.PlayModeStateChange state)
         {
+            if (state != UnityEditor.PlayModeStateChange.ExitingPlayMode) return;
+            UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeChanged;
             Hide();
             doc.gameObject.SetActive(false);
         }
+#endif
 
         // 기본 글꼴에 한글이 없을 때를 대비해 OS 한글 글꼴로 글꼴 에셋을 만든다. 출시 전에는 글꼴 파일을 프로젝트에 넣는다.
         static void ApplyKoreanFont(VisualElement root)
