@@ -146,10 +146,12 @@ namespace MartialTactics.App
             var nav = Ui.El("nav");
             foreach (var t in Tabs)
             {
+                // 다섯 칸의 너비·아이콘 크기·위치는 어느 화면에서나 같다. 고른 칸은 테두리 색과 아래 이름만 달라진다
                 if (t.tab == LobbyTab.None)
                 {
-                    if (app.Tab == LobbyTab.None) nav.Add(Ui.El("tb", "spacer"));
-                    else nav.Add(Ui.IconBtn(Icon.Kind.Close, app.CloseTab, 26, "tb", "x"));
+                    var center = Ui.El("tb", "center");
+                    if (app.Tab != LobbyTab.None) center.Add(Ui.IconBtn(Icon.Kind.Close, app.CloseTab, 26, "x"));
+                    nav.Add(center);
                     continue;
                 }
                 var tab = t.tab;
@@ -158,13 +160,12 @@ namespace MartialTactics.App
                 bool on = app.Tab == tab;
                 // 그림 아이콘은 한지 원판 위에 (먹색 바에서도 검은 그림이 보이게)
                 var medal = Ui.El("medal");
-                medal.Add(Ui.Item(t.icon, on ? 34 : 38));
+                medal.Add(Ui.Item(t.icon, 38));
                 b.Add(medal);
-                if (on)
-                {
-                    b.AddToClassList("on");
-                    b.Add(Ui.Lb(t.name, "tbn"));
-                }
+                var name = Ui.Lb(t.name, "tbn");
+                if (on) b.AddToClassList("on");
+                else name.style.visibility = Visibility.Hidden;
+                b.Add(name);
                 nav.Add(b);
             }
             return nav;
