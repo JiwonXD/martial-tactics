@@ -37,6 +37,7 @@ namespace MartialTactics.App
             }
             else Panel(app, screen);
             screen.Add(NavBar(app));
+            if (app.Tab == LobbyTab.None) screen.Add(ForgeObject(app));
             switch (app.Sheet)
             {
                 case LobbySheet.Settings: screen.Add(Settings(app)); break;
@@ -109,25 +110,41 @@ namespace MartialTactics.App
             var right = Ui.El("fp-side");
             right.Add(DeckCard(app, 1), DeckCard(app, 2));
 
-            // 가운데: 대장간 Lv(레벨 창) · 남은 철광석 · 쌓인 장비(결과 창) · Auto(자동 뽑기). 뽑기 단추는 하단 바 가운데
-            var mid = Ui.El("fp-mid");
-            var lv = new Button(app.OpenForgeLevel) { text = $"대장간 Lv {Ui.N}" };
-            lv.AddToClassList("forge-lv");
-            mid.Add(lv);
-            var ore = Ui.El("forge-ore");
-            ore.Add(Ui.Item(Icon.Kind.Ore, 16), Ui.Lb(Ui.N, "fo-n"));
-            mid.Add(ore);
-            var row = Ui.El("row", "fp-btns");
-            var stack = new Button(app.OpenForgeResult) { text = $"{Ui.N}개" };
-            stack.AddToClassList("forge-stack");
-            var auto = new Button(() => app.OpenSheet(LobbySheet.ForgeAuto));
-            auto.AddToClassList("forge-auto");
-            auto.Add(Ui.Lb("Auto", "fa-t"));
-            row.Add(stack, auto);
-            mid.Add(row);
+            var mid = Ui.El("fp-mid"); // 대장간 그림 자리 (ForgeObject가 겹쳐 그린다)
 
             panel.Add(left, mid, right);
             return panel;
+        }
+
+        // 대장간 (크럼블 오븐처럼 그림 한 덩어리): 패널 가운데에 앉고 아랫부분이 하단 바 가운데 칸에 걸친다.
+        // 누르면 한 번 뽑기, 위 Lv = 레벨 창, 오른쪽 위 = 남은 철광석, 왼쪽 = 쌓인 장비(결과 창), 왼쪽 아래 Auto = 자동 뽑기.
+        // 장비 데이터가 아직 없어 뽑기는 아무것도 하지 않는다
+        static VisualElement ForgeObject(GameApp app)
+        {
+            var wrap = Ui.El("forge-wrap");
+            wrap.pickingMode = PickingMode.Ignore;
+            var box = Ui.El("forge-box");
+            var forge = new Button();
+            forge.AddToClassList("forge-art");
+            var tex = Art.Load("UI/Art/forge_obj");
+            if (tex != null) forge.style.backgroundImage = new StyleBackground(tex);
+            else forge.Add(Ui.Item(Icon.Kind.Forge, 72));
+            box.Add(forge);
+            var lv = new Button(app.OpenForgeLevel) { text = $"Lv {Ui.N}" };
+            lv.AddToClassList("forge-lv");
+            box.Add(lv);
+            var ore = Ui.El("forge-ore");
+            ore.Add(Ui.Item(Icon.Kind.Ore, 16), Ui.Lb(Ui.N, "fo-n"));
+            box.Add(ore);
+            var stack = new Button(app.OpenForgeResult) { text = $"{Ui.N}개" };
+            stack.AddToClassList("forge-stack");
+            box.Add(stack);
+            var auto = new Button(() => app.OpenSheet(LobbySheet.ForgeAuto));
+            auto.AddToClassList("forge-auto");
+            auto.Add(Ui.Lb("Auto", "fa-t"));
+            box.Add(auto);
+            wrap.Add(box);
+            return wrap;
         }
 
         static VisualElement DeckCard(GameApp app, int pos)
@@ -166,17 +183,10 @@ namespace MartialTactics.App
                 // 다섯 칸의 너비·아이콘 크기·위치는 어느 화면에서나 같다. 고른 칸은 테두리 색과 아래 이름만 달라진다
                 if (t.tab == LobbyTab.None)
                 {
-                    // 가운데 칸도 다른 칸과 같은 크기: 로비에서는 대장간(누르면 한 번 뽑기), 탭을 열면 닫기
+                    // 가운데 칸은 늘 같은 너비: 로비에서는 대장간 그림이 이 칸에 걸쳐 앉고, 탭을 열면 닫기
                     var center = Ui.El("tb", "center");
                     if (app.Tab != LobbyTab.None) center.Add(Ui.IconBtn(Icon.Kind.Close, app.CloseTab, 26, "x"));
-                    else
-                    {
-                        var forge = new Button();
-                        forge.AddToClassList("medal");
-                        forge.AddToClassList("forge-medal");
-                        forge.Add(Ui.Item(Icon.Kind.Forge, 40));
-                        center.Add(forge);
-                    }
+
                     nav.Add(center);
                     continue;
                 }

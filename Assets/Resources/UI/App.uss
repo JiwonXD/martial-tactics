@@ -674,3 +674,14 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .fp-btns > .forge-stack { position: relative; left: 0; top: 0; min-height: 28px; margin-right: 4px; }
 .fp-btns > .forge-auto { position: relative; left: 0; bottom: 0; min-height: 28px; }
 .tb.center > .x { border-radius: 26px; }
+
+/* 대장간 그림: 패널 가운데, 아랫부분이 하단 바 가운데 칸에 걸침 (크럼블 오븐) */
+.forge-wrap { position: absolute; left: 0; right: 0; bottom: 14px; align-items: center; }
+.forge-box { width: 140px; height: 172px; }
+.forge-art { position: absolute; left: 4px; right: 4px; top: 22px; bottom: 0; margin: 0; padding: 0; border-width: 0; background-color: rgba(0, 0, 0, 0); -unity-background-scale-mode: scale-to-fit; align-items: center; justify-content: center; }
+.forge-box > .forge-lv { position: absolute; top: 0; left: 30px; right: 30px; }
+.forge-box > .forge-ore { position: absolute; right: -10px; top: 34px; margin: 0; }
+.forge-box > .forge-stack { position: absolute; left: -16px; top: 66px; }
+.forge-box > .forge-auto { position: absolute; left: -12px; bottom: 30px; }
+.fp-mid { width: 140px; }
+.forge-box > .forge-auto { left: -4px; bottom: 56px; }
