@@ -17,14 +17,51 @@ namespace MartialTactics.App
         public static readonly string[] GearGrades = { "하품", "중품", "상품", "희귀", "명품", "영웅", "전설" };
         public static readonly string[] GearEffects = { "치명타율", "치명타 피해", "무공 피해 증가", "받는 피해 감소", "회피", "제어 적중", "제어 저항" };
 
-        /// <summary>재화 칩: 아이콘 + 수량.</summary>
+        /// <summary>재화 칩: 아이콘 + 수량. "rare" 클래스는 영단.</summary>
         public static VisualElement Cur(Icon.Kind icon, string amount, params string[] classes)
         {
             var e = El(classes);
             e.AddToClassList("cur");
-            e.Add(new Icon(icon, 16));
+            e.Add(Item(icon, 20, Array.IndexOf(classes, "rare") >= 0 ? "pill2" : null));
             e.Add(Lb(amount, "cur-n"));
             return e;
+        }
+
+        /// <summary>그림 아이콘 (Resources/UI/Art/icon_*). 그림이 없으면 선 아이콘.</summary>
+        public static VisualElement Item(Icon.Kind kind, float size, string art = null)
+        {
+            var tex = Art.Load("UI/Art/icon_" + (art ?? ArtName(kind)));
+            if (tex == null) return new Icon(kind, size);
+            var e = new VisualElement { pickingMode = PickingMode.Ignore };
+            e.style.width = size;
+            e.style.height = size;
+            e.style.flexShrink = 0;
+            e.style.backgroundImage = new StyleBackground(tex);
+            e.AddToClassList("icon");
+            e.AddToClassList("item");
+            return e;
+        }
+
+        static string ArtName(Icon.Kind kind)
+        {
+            switch (kind)
+            {
+                case Icon.Kind.Units: return "units";
+                case Icon.Kind.Growth: return "growth";
+                case Icon.Kind.Content: return "content";
+                case Icon.Kind.Gacha: return "gacha";
+                case Icon.Kind.Forge: return "forge";
+                case Icon.Kind.Coin: return "coin";
+                case Icon.Kind.Ticket: return "ticket";
+                case Icon.Kind.Book: return "book";
+                case Icon.Kind.Ore: return "ore";
+                case Icon.Kind.Flame: return "flame";
+                case Icon.Kind.Pill: return "pill";
+                case Icon.Kind.Chest: return "chest";
+                case Icon.Kind.Clock: return "clock";
+                case Icon.Kind.Gear: return "gear";
+                default: return kind.ToString().ToLowerInvariant();
+            }
         }
 
         /// <summary>제목 띠: 먹 바탕에 한지색 글자, 오른쪽 끝을 주홍으로 끊는다.</summary>

@@ -134,7 +134,7 @@ namespace MartialTactics.App
             grow.AddToClassList("btn");
             grow.AddToClassList("pri");
             grow.AddToClassList("iconbtn");
-            grow.Add(Ui.Lb("대장간 성장", "bt"), new Icon(Icon.Kind.Flame, 16), Ui.Lb(Ui.N, "bt"));
+            grow.Add(Ui.Lb("대장간 성장", "bt"), Ui.Item(Icon.Kind.Flame, 22), Ui.Lb(Ui.N, "bt"));
             footer.Add(grow);
             screen.Add(footer);
             return screen;
@@ -165,7 +165,7 @@ namespace MartialTactics.App
             var sv = LobbyScreen.Scroll();
             for (int i = 0; i < 3; i++)
             {
-                var row = Ui.El("skrow", "off");
+                var row = Ui.El("skrow", "plate-row", "off");
                 var line = Ui.El("row");
                 line.Add(Ui.Add(Ui.El("gear-cell", "mini"), Ui.Lb(Ui.GearSlots[slot], "lb")));
                 var t = Ui.El("grow");

@@ -122,6 +122,7 @@ namespace MartialTactics.App
                 bool leader = pos == 0;
                 var v = new UnitView { Root = Ui.El("u") };
                 var face = Ui.Portrait(u.Source.Id, true, "face");
+                face.Add(Skin.CardFrame(leader, 0.2f));
                 if (leader) face.AddToClassList("leader");
                 v.Pop = Ui.Lb("", "pop");
                 face.Add(v.Pop);

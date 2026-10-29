@@ -48,6 +48,7 @@ namespace MartialTactics.App
                 var col = Ui.El("rcol");
                 if (i == 0) col.AddToClassList("leader");
                 var pic = Ui.Portrait(s.Unit, false, "rpic");
+                pic.Add(Skin.CardFrame(i == 0, 0.3f));
                 pic.Add(Ui.Lb(BattleRules.PosNames[i], "pos-seal"));
                 col.Add(pic, Ui.Lb(Catalog.Unit[s.Unit].Name, "un"));
                 row.Add(col);

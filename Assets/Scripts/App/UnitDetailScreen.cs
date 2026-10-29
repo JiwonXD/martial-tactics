@@ -22,11 +22,10 @@ namespace MartialTactics.App
             // 일러스트와 겹쳐 놓인 이름 카드. 뒤로 버튼은 일러스트 위에 띄운다
             var head = Ui.El();
             head.Add(Ui.Portrait(u.Id, false, "illust"));
-            var card = Ui.El("namecard");
+            var card = Ui.El("namecard", "plate-row");
             card.Add(Ui.Lb($"{Ui.Stars(u.Id, u.Promotions)}  <color=#5c564d>{GameState.Rank(stars)} · 승급 {u.Promotions}/{stars}</color>", "stars"));
             card.Add(Ui.El("row").Add(Ui.Lb(d.Name, "uname"), Ui.Lb("Lv [n]", "lvtag")));
             card.Add(Ui.Lb($"{d.Title} · {d.Faction}", "lb"));
-            Frame.On(card, Frame.Bronze, Frame.Vermilion, 3, 8);
             head.Add(card);
             scroll.Add(head);
             screen.Add(Ui.IconBtn(Icon.Kind.Back, back, 22, "back", "float"));

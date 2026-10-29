@@ -26,7 +26,7 @@ namespace MartialTactics.App
                 var def = Catalog.Skill[s.Skill];
                 var holder = game.EquippedBy(s.Uid);
                 string err = game.EquipError(u, slot, s);
-                var row = Ui.El("skrow");
+                var row = Ui.El("skrow", "plate-row");
                 if (err != null) row.AddToClassList("off");
                 var line = Ui.El("row");
                 line.Add(Ui.Lb(def.Name, "b"), UnitDetailScreen.SkillTag(def), Ui.El("grow"));

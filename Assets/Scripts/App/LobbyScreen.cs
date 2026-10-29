@@ -67,7 +67,9 @@ namespace MartialTactics.App
 
             // 방치 보상 · 단계 도전. 지금 상대는 임시(무작위)라 대전 준비로 이어 둔다
             var act = Ui.El("act");
-            var reward = Ui.IconBtn(Icon.Kind.Chest, () => app.OpenSheet(LobbySheet.IdleReward), 26, "reward");
+            var reward = new Button(() => app.OpenSheet(LobbySheet.IdleReward));
+            reward.AddToClassList("reward");
+            reward.Add(Ui.Item(Icon.Kind.Chest, 40));
             reward.Add(Ui.El("dot"));
             var challenge = new Button(app.OpenBattleReady);
             challenge.AddToClassList("challenge");
@@ -75,7 +77,7 @@ namespace MartialTactics.App
             act.Add(reward, challenge);
             stage.Add(act);
             var idle = Ui.El("idle-tag");
-            idle.Add(new Icon(Icon.Kind.Clock, 14), Ui.Lb($"{Ui.N}단계 방치 중", "lb"));
+            idle.Add(Ui.Item(Icon.Kind.Clock, 18), Ui.Lb($"{Ui.N}단계 방치 중", "lb"));
             stage.Add(idle);
 
             // 덱 3명: 왼쪽부터 주장 · 부장 · 부장
@@ -90,7 +92,7 @@ namespace MartialTactics.App
                 if (u != null)
                 {
                     card = Ui.Portrait(u.Id, false, "pcard");
-                    Frame.On(card, new UnityEngine.Color(1, 1, 1, 0.55f), pos == 0 ? Frame.Vermilion : Frame.Paper, 4, 9);
+                    card.Add(Skin.CardFrame(pos == 0, 0.32f));
                     col.Add(card);
                     var name = Ui.El("pname");
                     name.Add(Ui.Lb(Catalog.Unit[u.Id].Name, "pn"), Ui.Bar(1, false));
@@ -126,7 +128,7 @@ namespace MartialTactics.App
             var lv = new Button(app.OpenForgeLevel) { text = $"Lv {Ui.N}" };
             lv.AddToClassList("forge-lv");
             forge.Add(lv);
-            forge.Add(new Icon(Icon.Kind.Forge, 42));
+            forge.Add(Ui.Item(Icon.Kind.Forge, 54));
             forge.Add(Ui.Lb("대장간", "forge-name"));
             ring.Add(forge);
             var ore = Ui.El("forge-ore");
@@ -155,7 +157,10 @@ namespace MartialTactics.App
                 var b = new Button(() => app.OpenTab(tab));
                 b.AddToClassList("tb");
                 bool on = app.Tab == tab;
-                b.Add(new Icon(t.icon, on ? 22 : 26));
+                // 그림 아이콘은 한지 원판 위에 (먹색 바에서도 검은 그림이 보이게)
+                var medal = Ui.El("medal");
+                medal.Add(Ui.Item(t.icon, on ? 34 : 38));
+                b.Add(medal);
                 if (on)
                 {
                     b.AddToClassList("on");
@@ -174,13 +179,12 @@ namespace MartialTactics.App
                 if (e.target != dim) return;
                 app.OpenSheet(LobbySheet.None);
             });
-            var sheet = Ui.El("sheet");
+            var sheet = Ui.El("sheet", "panel-skin");
             var head = Ui.El("sheet-head");
             head.Add(Ui.Band(title), Ui.El("grow"), Ui.IconBtn(Icon.Kind.Close, () => app.OpenSheet(LobbySheet.None), 20, "back"));
             sheet.Add(head);
             body = Ui.El("sheet-body");
             sheet.Add(body);
-            Frame.On(sheet, Frame.Bronze, Frame.Vermilion, 5, 12);
             dim.Add(sheet);
             return dim;
         }
@@ -208,19 +212,18 @@ namespace MartialTactics.App
         {
             var dim = Sheet(app, "방치 보상", out var body);
             var time = Ui.El("idle-time");
-            time.Add(new Icon(Icon.Kind.Clock, 18), Ui.Lb($"{Ui.N}:{Ui.N}", "it-n"), Ui.El("grow"), Ui.Lb($"최대 {Ui.N}시간", "lb"));
+            time.Add(Ui.Item(Icon.Kind.Clock, 26), Ui.Lb($"{Ui.N}:{Ui.N}", "it-n"), Ui.El("grow"), Ui.Lb($"최대 {Ui.N}시간", "lb"));
             body.Add(time);
             var grid = Ui.El("rewards");
-            foreach (var (icon, name) in new[]
+            foreach (var (icon, art, name) in new[]
                      {
-                         (Icon.Kind.Book, "레벨업 재화"), (Icon.Kind.Coin, "골드"), (Icon.Kind.Ticket, "뽑기권"),
-                         (Icon.Kind.Gear, "강화 재료"), (Icon.Kind.Ore, "철광석"), (Icon.Kind.Pill, "단약"),
+                         (Icon.Kind.Book, "book", "레벨업 재화"), (Icon.Kind.Coin, "coin", "골드"), (Icon.Kind.Ticket, "ticket", "뽑기권"),
+                         (Icon.Kind.Gear, "whet", "강화 재료"), (Icon.Kind.Ore, "ore", "철광석"), (Icon.Kind.Pill, "pill", "단약"),
                      })
             {
                 var cell = Ui.El("rw");
                 var box = Ui.El("rw-icon");
-                box.Add(new Icon(icon, 26));
-                Frame.On(box, Frame.Bronze, Frame.Bronze, 3, 6);
+                box.Add(Ui.Item(icon, 46, art));
                 cell.Add(box, Ui.Lb(Ui.N, "rw-n"), Ui.Lb(name, "rw-name"));
                 grid.Add(cell);
             }
@@ -340,14 +343,15 @@ namespace MartialTactics.App
             var card = Ui.El("ucard");
             int stars = GameState.Stars(id);
             card.AddToClassList("s" + stars);
+            // 초상을 틀 안쪽에 깔고, 이름은 초상 아래쪽에 겹친 어두운 띠, 맨 위에 그림 틀
             var pic = Ui.Portrait(id, false, "upic");
-            Frame.On(pic, new UnityEngine.Color(1, 1, 1, 0.45f), stars >= 5 ? Frame.Vermilion : Frame.Paper, 3, 8);
             pic.Add(Ui.Lb($"Lv {Ui.N}", "lv"));
             if (spare > 0) pic.Add(Ui.Lb($"+{spare}", "spare"));
-            card.Add(pic);
             var cap = Ui.El("ucap");
             cap.Add(Ui.Lb(Ui.Stars(id, promotions), "sr"), Ui.Lb(d.Name, "un"));
-            card.Add(cap);
+            pic.Add(cap);
+            card.Add(pic);
+            card.Add(Skin.CardFrame(stars >= 5));
             return card;
         }
 
@@ -391,7 +395,7 @@ namespace MartialTactics.App
                 {
                     var d = Catalog.Unit[u.Id];
                     var pic = Ui.Portrait(u.Id, false, "dpic");
-                    Frame.On(pic, new UnityEngine.Color(1, 1, 1, 0.5f), pos == 0 ? Frame.Vermilion : Frame.Paper, 4, 9);
+                    pic.Add(Skin.CardFrame(pos == 0, 0.32f));
                     if (ei >= 0) pic.Add(Ui.Lb(d.Apt[ei].ToString(), "apt-badge"));
                     pic.Add(Ui.IconBtn(Icon.Kind.Close, () => { deck.Units[p] = ""; app.Save(); app.Refresh(); }, 14, "dremove"));
                     col.Add(pic, Ui.Lb(Ui.Stars(u.Id, u.Promotions), "sr"), Ui.Lb(d.Name, "un"));

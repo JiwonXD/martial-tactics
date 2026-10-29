@@ -36,7 +36,10 @@ namespace MartialTactics.App
             b.Add(Ui.Band(name, "banner-band"));
             if (note != null) b.Add(Ui.Lb(note, "banner-note"));
             b.Add(Ui.Lb(seal, "banner-seal"));
-            Frame.On(b, new UnityEngine.Color(0.12f, 0.11f, 0.10f, 0.6f), Frame.Ink, 4, 12);
+            var edge = new VisualElement { pickingMode = PickingMode.Ignore };
+            edge.AddToClassList("cardframe");
+            Skin.Set(edge, "panel", 46, 46, 0.45f, false);
+            b.Add(edge);
             return b;
         }
 
@@ -55,7 +58,7 @@ namespace MartialTactics.App
             var sv = LobbyScreen.Scroll();
             for (int i = 1; i <= 6; i++)
             {
-                var row = Ui.El("stage-row");
+                var row = Ui.El("stage-row", "plate-row");
                 if (i == 1) row.AddToClassList("on");
                 if (i > 2) row.AddToClassList("off");
                 row.Add(Ui.Lb($"{i}", "stage-n"));
@@ -140,7 +143,7 @@ namespace MartialTactics.App
             if (pri) b.AddToClassList("pri");
             b.Add(Ui.Lb(name, "draw-name"));
             var c = Ui.El("row");
-            c.Add(new Icon(Icon.Kind.Ticket, 14), Ui.Lb(cost, "draw-cost"));
+            c.Add(Ui.Item(Icon.Kind.Ticket, 20), Ui.Lb(cost, "draw-cost"));
             b.Add(c);
             return b;
         }

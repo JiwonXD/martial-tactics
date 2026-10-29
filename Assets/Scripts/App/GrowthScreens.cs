@@ -30,7 +30,7 @@ namespace MartialTactics.App
 
         static VisualElement LevelRow(GameApp app, OwnedUnit u, int pos)
         {
-            var row = Ui.El("urow");
+            var row = Ui.El("urow", "plate-row");
             var face = Ui.Portrait(u.Id, true, "uface");
             if (pos >= 0) face.Add(Ui.Lb(BattleRules.PosNames[pos], pos == 0 ? "pos-seal" : "pos-seal"));
             row.Add(face);
@@ -40,7 +40,7 @@ namespace MartialTactics.App
             var b = new Button();
             b.AddToClassList("btn");
             b.AddToClassList("iconbtn");
-            b.Add(Ui.Lb("레벨업", "bt"), new Icon(Icon.Kind.Book, 14), Ui.Lb(Ui.N, "bt"));
+            b.Add(Ui.Lb("레벨업", "bt"), Ui.Item(Icon.Kind.Book, 20), Ui.Lb(Ui.N, "bt"));
             row.Add(b);
             string id = u.Id;
             face.RegisterCallback<ClickEvent>(_ => app.OpenUnit(id));
@@ -86,9 +86,8 @@ namespace MartialTactics.App
             sv.Add(hero);
 
             // 진행 중인 수련 하나
-            var now = Ui.El("research-now");
-            now.Add(new Icon(Icon.Kind.Clock, 18), Ui.Lb($"외공 Lv {Ui.N}", "b", "grow"), Ui.Lb($"{Ui.N}:{Ui.N}:{Ui.N}", "b"));
-            Frame.On(now, Frame.Bronze, Frame.Vermilion, 3, 7);
+            var now = Ui.El("research-now", "plate-row");
+            now.Add(Ui.Item(Icon.Kind.Clock, 24), Ui.Lb($"외공 Lv {Ui.N}", "b", "grow"), Ui.Lb($"{Ui.N}:{Ui.N}:{Ui.N}", "b"));
             sv.Add(now);
 
             var gwan = Ui.El("row", "gwan");
@@ -138,7 +137,8 @@ namespace MartialTactics.App
             if (special) n.AddToClassList("special");
             if (small) n.AddToClassList("small");
             n.Add(Ui.Lb(name, "tn-name"), Ui.Lb(value, "tn-v"), Ui.Lb($"Lv {Ui.N}/{Ui.N}", "tn-lv"));
-            if (!small) Frame.On(n, special ? Frame.Vermilion : Frame.Bronze, special ? Frame.Vermilion : Frame.Ink, 3, 6);
+            if (!special && !small) n.AddToClassList("plate-row");
+            if (special) Frame.On(n, Frame.Vermilion, Frame.Vermilion, 3, 6);
             return n;
         }
     }

@@ -46,6 +46,7 @@ namespace MartialTactics.App
         {
             root.Clear();
             root.Add(screen);
+            Skin.Apply(screen);
             root.style.display = DisplayStyle.Flex;
             Visible = true;
         }
