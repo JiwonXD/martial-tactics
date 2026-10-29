@@ -30,15 +30,19 @@ namespace MartialTactics.App
         public static VisualElement Build(GameApp app)
         {
             var screen = Ui.El("screen", "lobby");
-            if (app.Tab == LobbyTab.None) Idle(app, screen);
+            if (app.Tab == LobbyTab.None)
+            {
+                Idle(app, screen);
+                screen.Add(ForgePanel(app));
+            }
             else Panel(app, screen);
             screen.Add(NavBar(app));
-            if (app.Tab == LobbyTab.None) screen.Add(Forge(app));
             switch (app.Sheet)
             {
                 case LobbySheet.Settings: screen.Add(Settings(app)); break;
                 case LobbySheet.IdleReward: screen.Add(IdleReward(app)); break;
                 case LobbySheet.ForgeAuto: screen.Add(ForgeScreens.AutoSheet(app)); break;
+                case LobbySheet.ForgeResult: screen.Add(ForgeScreens.ResultSheet(app)); break;
             }
             return screen;
         }
@@ -59,86 +63,101 @@ namespace MartialTactics.App
             var bg = Art.Load("Art/lobby_bg");
             if (bg != null) stage.style.backgroundImage = new StyleBackground(bg);
 
+            // 머리: 왼쪽 프로필(주장 얼굴 · Lv · 전투력), 오른쪽 재화와 설정
             var deck = app.Game.Data.Deck.Units;
             var top = Ui.El("ltop");
-            var avatar = Ui.Portrait(app.Game.Find(deck[0]) != null ? deck[0] : null, true, "avatar");
-            top.Add(avatar, Ui.El("grow"), Currencies(), Ui.IconBtn(Icon.Kind.Gear, () => app.OpenSheet(LobbySheet.Settings), 20, "sq"));
+            var prof = Ui.El("profile");
+            prof.Add(Ui.Portrait(app.Game.Find(deck[0]) != null ? deck[0] : null, true, "avatar"));
+            var pinfo = Ui.El("pinfo");
+            pinfo.Add(Ui.Lb($"Lv {Ui.N}", "plv"), Ui.Lb($"전투력 {Ui.N}", "ppow"));
+            prof.Add(pinfo);
+            top.Add(prof, Ui.El("grow"), Currencies(), Ui.IconBtn(Icon.Kind.Gear, () => app.OpenSheet(LobbySheet.Settings), 20, "sq"));
             stage.Add(top);
 
-            // 방치 보상 · 단계 도전. 지금 상대는 임시(무작위)라 대전 준비로 이어 둔다
-            var act = Ui.El("act");
-            var reward = new Button(() => app.OpenSheet(LobbySheet.IdleReward));
-            reward.AddToClassList("reward");
-            reward.Add(Ui.Item(Icon.Kind.Chest, 40));
-            reward.Add(Ui.El("dot"));
+            // 가운데 위: 단계 도전 (크럼블 보스 소환 자리). 상대는 아직 임시(무작위)라 대전 준비로 이어 둔다
+            var mid = Ui.El("challenge-box");
             var challenge = new Button(app.OpenBattleReady);
             challenge.AddToClassList("challenge");
-            challenge.Add(Ui.Lb(Ui.N, "ch-n"), Ui.Lb("단계 도전", "ch-t"));
-            act.Add(reward, challenge);
-            stage.Add(act);
+            challenge.Add(Ui.Lb($"{Ui.N}단계 도전", "ch-t"));
+            mid.Add(challenge);
             var idle = Ui.El("idle-tag");
-            idle.Add(Ui.Item(Icon.Kind.Clock, 18), Ui.Lb($"{Ui.N}단계 방치 중", "lb"));
-            stage.Add(idle);
+            idle.Add(Ui.Item(Icon.Kind.Clock, 16), Ui.Lb($"{Ui.N}단계 반복 중", "it"));
+            mid.Add(idle);
+            stage.Add(mid);
 
-            // 덱 3명: 왼쪽부터 주장 · 부장 · 부장
-            var party = Ui.El("party");
-            for (int pos = 0; pos < 3; pos++)
-            {
-                int p = pos;
-                var u = app.Game.Find(deck[pos]);
-                var col = Ui.El("pt");
-                if (pos == 0) col.AddToClassList("leader");
-                VisualElement card;
-                if (u != null)
-                {
-                    card = Ui.Portrait(u.Id, false, "pcard");
-                    card.Add(Skin.CardFrame(pos == 0, 0.32f));
-                    col.Add(card);
-                    var name = Ui.El("pname");
-                    name.Add(Ui.Lb(Catalog.Unit[u.Id].Name, "pn"), Ui.Bar(1, false));
-                    col.Add(name);
-                }
-                else
-                {
-                    card = Ui.El("pcard", "empty");
-                    card.Add(new Icon(Icon.Kind.Plus, 28));
-                    col.Add(card);
-                }
-                card.Add(Ui.Lb(BattleRules.PosNames[pos], "pos-seal"));
-                col.RegisterCallback<ClickEvent>(_ =>
-                {
-                    if (u != null) app.OpenUnit(u.Id);
-                    else app.OpenDeckPick(p);
-                });
-                party.Add(col);
-            }
-            stage.Add(party);
+            // 왼쪽 세로 줄: 방치 보상
+            var side = Ui.El("side-col");
+            var reward = new Button(() => app.OpenSheet(LobbySheet.IdleReward));
+            reward.AddToClassList("round");
+            reward.Add(Ui.Item(Icon.Kind.Chest, 40));
+            reward.Add(Ui.El("dot"));
+            side.Add(reward);
+            stage.Add(side);
+            stage.Add(Ui.Lb("[방치 전투]", "stage-ph"));
             screen.Add(stage);
         }
 
-        // 대장간 (기획서 2026-10-29): 누르면 한 번 뽑기, 위는 뽑기 레벨(누르면 레벨 창), 오른쪽 위는 남은 철광석,
-        // 왼쪽은 쌓인 장비(결과 창), 왼쪽 아래 톱니는 자동 뽑기. 장비 데이터가 아직 없어 뽑기는 아무것도 하지 않는다
-        static VisualElement Forge(GameApp app)
+        // 대장간 패널 (크럼블 오븐 패널 자리): 가운데 대장간, 왼쪽 주장, 오른쪽 부장 둘 (왼쪽부터 주장 · 부장 · 부장).
+        // 대장간: 누르면 한 번 뽑기, 위 Lv = 레벨 창, 오른쪽 위 = 남은 철광석, 왼쪽 = 쌓인 장비(결과 창), 왼쪽 아래 톱니 = 자동 뽑기.
+        // 장비 데이터가 아직 없어 뽑기는 아무것도 하지 않는다
+        static VisualElement ForgePanel(GameApp app)
         {
-            var wrap = Ui.El("forge-wrap");
-            wrap.pickingMode = PickingMode.Ignore;
-            var ring = Ui.El("forge-ring");
-            var forge = new Button();
-            forge.AddToClassList("forge");
+            var panel = Ui.El("forge-panel");
+            var deck = app.Game.Data.Deck.Units;
+            var left = Ui.El("fp-side");
+            left.Add(DeckCard(app, 0));
+            var right = Ui.El("fp-side");
+            right.Add(DeckCard(app, 1), DeckCard(app, 2));
+
+            var mid = Ui.El("fp-mid");
             var lv = new Button(app.OpenForgeLevel) { text = $"Lv {Ui.N}" };
             lv.AddToClassList("forge-lv");
-            forge.Add(lv);
-            forge.Add(Ui.Item(Icon.Kind.Forge, 62));
-            ring.Add(forge);
+            mid.Add(lv);
+            var forge = new Button();
+            forge.AddToClassList("forge");
+            forge.Add(Ui.Item(Icon.Kind.Forge, 66));
+            mid.Add(forge);
             var ore = Ui.El("forge-ore");
-            ore.Add(new Icon(Icon.Kind.Ore, 12), Ui.Lb(Ui.N, "fo-n"));
-            ring.Add(ore);
+            ore.Add(Ui.Item(Icon.Kind.Ore, 14), Ui.Lb(Ui.N, "fo-n"));
+            mid.Add(ore);
             var stack = new Button(app.OpenForgeResult) { text = $"{Ui.N}개" };
             stack.AddToClassList("forge-stack");
-            ring.Add(stack);
-            ring.Add(Ui.IconBtn(Icon.Kind.Gear, () => app.OpenSheet(LobbySheet.ForgeAuto), 16, "forge-gear"));
-            wrap.Add(ring);
-            return wrap;
+            mid.Add(stack);
+            var auto = new Button(() => app.OpenSheet(LobbySheet.ForgeAuto));
+            auto.AddToClassList("forge-auto");
+            auto.Add(Ui.Lb("Auto", "fa-t"));
+            mid.Add(auto);
+
+            panel.Add(left, mid, right);
+            return panel;
+        }
+
+        static VisualElement DeckCard(GameApp app, int pos)
+        {
+            var u = app.Game.Find(app.Game.Data.Deck.Units[pos]);
+            var col = Ui.El("pt");
+            if (pos == 0) col.AddToClassList("leader");
+            VisualElement card;
+            if (u != null)
+            {
+                card = Ui.Portrait(u.Id, true, "pcard");
+                card.Add(Ui.Lb($"Lv {Ui.N}", "lv"));
+                card.Add(Skin.CardFrame(pos == 0));
+                col.Add(card, Ui.Bar(1, false));
+            }
+            else
+            {
+                card = Ui.El("pcard", "empty");
+                card.Add(new Icon(Icon.Kind.Plus, 24));
+                col.Add(card);
+            }
+            card.Add(Ui.Lb(BattleRules.PosNames[pos], "pos-seal"));
+            col.RegisterCallback<ClickEvent>(_ =>
+            {
+                if (u != null) app.OpenUnit(u.Id);
+                else app.OpenDeckPick(pos);
+            });
+            return col;
         }
 
         static VisualElement NavBar(GameApp app)
@@ -179,9 +198,10 @@ namespace MartialTactics.App
                 if (e.target != dim) return;
                 app.OpenSheet(LobbySheet.None);
             });
-            var sheet = Ui.El("sheet", "panel-skin");
+            var sheet = Ui.El("sheet");
+            // 크럼블 창 머리: 가운데 제목, 오른쪽 닫기
             var head = Ui.El("sheet-head");
-            head.Add(Ui.Band(title), Ui.El("grow"), Ui.IconBtn(Icon.Kind.Close, () => app.OpenSheet(LobbySheet.None), 20, "back"));
+            head.Add(Ui.Lb(title, "sheet-title"), Ui.IconBtn(Icon.Kind.Close, () => app.OpenSheet(LobbySheet.None), 18, "sheet-x"));
             sheet.Add(head);
             body = Ui.El("sheet-body");
             sheet.Add(body);
@@ -241,7 +261,7 @@ namespace MartialTactics.App
             var head = Ui.El("phead");
             string title = Tabs.First(t => t.tab == app.Tab).name;
             if (app.Tab == LobbyTab.Growth) title = "폐관수련";
-            head.Add(Ui.Band(title), Ui.El("grow"), Currencies());
+            head.Add(Ui.Lb(title, "ptitle"), Ui.El("grow"), Currencies());
             screen.Add(head);
 
             var body = Ui.El("pbody");
@@ -265,6 +285,12 @@ namespace MartialTactics.App
             }
             screen.Add(body);
 
+            // 하위 탭은 하단 바 바로 위 줄 (크럼블). 성장·뽑기는 아직 하나뿐이지만 같은 자리에 둔다
+            if (app.Tab == LobbyTab.Growth)
+                screen.Add(SubBar(new[] { ("폐관수련", true, (Action)(() => { })) }));
+            if (app.Tab == LobbyTab.Gacha)
+                screen.Add(SubBar(new[] { ("무인 뽑기", true, (Action)(() => { })) }));
+
             if (app.Tab == LobbyTab.Units)
                 screen.Add(SubBar(Subs.Select(s => (s.name, app.Sub == s.sub, (Action)(() => app.OpenSub(s.sub))))));
             if (app.Tab == LobbyTab.Content)
@@ -280,7 +306,7 @@ namespace MartialTactics.App
             var subs = Ui.El("subs");
             foreach (var s in items)
             {
-                var b = Ui.Btn(s.name, s.open, "sub");
+                var b = Ui.Btn(s.on ? $"▸ {s.name} ◂" : s.name, s.open, "sub");
                 if (s.on) b.AddToClassList("on");
                 subs.Add(b);
             }
@@ -343,15 +369,15 @@ namespace MartialTactics.App
             var card = Ui.El("ucard");
             int stars = GameState.Stars(id);
             card.AddToClassList("s" + stars);
-            // 초상을 틀 안쪽에 깔고, 이름은 초상 아래쪽에 겹친 어두운 띠, 맨 위에 그림 틀
+            // 크럼블 카드: 둥근 초상(테두리, 왼쪽 아래 Lv, 오른쪽 위 중복 수) 아래에 별과 이름
             var pic = Ui.Portrait(id, false, "upic");
             pic.Add(Ui.Lb($"Lv {Ui.N}", "lv"));
             if (spare > 0) pic.Add(Ui.Lb($"+{spare}", "spare"));
+            pic.Add(Skin.CardFrame(stars >= 5));
+            card.Add(pic);
             var cap = Ui.El("ucap");
             cap.Add(Ui.Lb(Ui.Stars(id, promotions), "sr"), Ui.Lb(d.Name, "un"));
-            pic.Add(cap);
-            card.Add(pic);
-            card.Add(Skin.CardFrame(stars >= 5));
+            card.Add(cap);
             return card;
         }
 

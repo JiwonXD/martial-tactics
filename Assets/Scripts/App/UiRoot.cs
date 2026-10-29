@@ -36,8 +36,6 @@ namespace MartialTactics.App
             root = doc.rootVisualElement;
             root.styleSheets.Add(Resources.Load<StyleSheet>("UI/App"));
             root.AddToClassList("app-root");
-            var paper = Art.Load("Art/hanji"); // 한지 질감. 없으면 USS의 단색
-            if (paper != null) root.style.backgroundImage = new StyleBackground(paper);
             ApplyKoreanFont(root);
             Hide();
         }
@@ -69,8 +67,8 @@ namespace MartialTactics.App
 #if UNITY_2023_1_OR_NEWER
             if (koreanFont == null)
             {
-                // 화풍 A는 명조. Noto Serif KR은 가변 글꼴이라 이름으로 안 열리고 파일로 열면 가장 가는 굵기라 OS 명조를 쓴다. 없으면 고딕
-                foreach (var family in new[] { "HCR Batang", "Batang", "AppleMyungjo", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", "Noto Sans CJK KR" })
+                // 2026-10-29 크럼블 톤으로 바꾸며 고딕(Noto Sans KR)으로. 없으면 맑은 고딕
+                foreach (var family in new[] { "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR" })
                 {
                     var font = FontAsset.CreateFontAsset(family, "Regular");
                     if (font == null) continue;

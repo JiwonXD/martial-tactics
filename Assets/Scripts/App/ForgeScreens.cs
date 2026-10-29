@@ -12,27 +12,24 @@ namespace MartialTactics.App
     /// </summary>
     static class ForgeScreens
     {
-        // 자동 뽑기 설정: 톱니를 누르면 아래에서 올라온다. 남길 등급 아래는 바로 분해 → 불씨,
-        // 고른 특수효과가 없는 장비도 바로 분해(영웅 이상에만 적용). 한 번에 뽑는 개수 상한은 뽑기 레벨 따라 풀림
+        // 자동 뽑기 (크럼블 자동 열기): 아래에서 올라오는 창. 장비 등급 드롭다운 + 한 번에 뽑는 개수 드롭다운을 나란히,
+        // 가운데 시작, 오른쪽 아래 특수효과 설정 펼치기. 남길 등급 아래와 고른 특수효과가 없는 장비(영웅 이상)는 바로 분해 → 불씨.
+        // 한 번에 뽑는 개수 상한은 뽑기 레벨 따라 풀리고 수치는 미정
         public static VisualElement AutoSheet(GameApp app)
         {
             var dim = LobbyScreen.Sheet(app, "자동 뽑기", out var body);
             dim.AddToClassList("bottom");
 
-            // 크럼블 자동 열기와 같은 짜임: 장비 등급 드롭다운, 한 번에 뽑는 개수 드롭다운, 펼치는 특수효과 체크
-            var grades = Enumerable.Range(0, Ui.GearGrades.Length).Reverse().Select(i => (i, $"{Ui.GearGrades[i]} 이상")).ToArray();
-            body.Add(Dropdown("장비 등급", $"{Ui.GearGrades[app.KeepGrade]} 이상", app.GradeOpen, grades, app.KeepGrade,
+            var pair = Ui.El("dd-pair");
+            var grades = Enumerable.Range(0, Ui.GearGrades.Length).Reverse().Select(i => (i, Ui.GearGrades[i])).ToArray();
+            pair.Add(Dropdown("장비 등급", Ui.GearGrades[app.KeepGrade], "이상", app.GradeOpen, grades, app.KeepGrade,
                 () => { app.GradeOpen = !app.GradeOpen; app.CountOpen = false; app.Refresh(); },
                 g => { app.KeepGrade = g; app.GradeOpen = false; app.Refresh(); }));
-            // 한 번에 뽑는 개수 상한은 뽑기 레벨 따라 풀리고 수치는 미정이라 칸 하나만
-            body.Add(Dropdown("한 번에", $"{Ui.N}개", app.CountOpen, new[] { (0, $"{Ui.N}개") }, 0,
+            pair.Add(Dropdown("한 번에 뽑는 개수", Ui.N, null, app.CountOpen, new[] { (0, Ui.N) }, 0,
                 () => { app.CountOpen = !app.CountOpen; app.GradeOpen = false; app.Refresh(); },
                 _ => { app.CountOpen = false; app.Refresh(); }));
+            body.Add(pair);
 
-            var fx = new Button(() => { app.EffectsOpen = !app.EffectsOpen; app.Refresh(); });
-            fx.AddToClassList("fold");
-            fx.Add(Ui.Lb("특수효과 설정", "b", "grow"), Ui.Lb($"{app.Effects.Count}", "lb"), new Icon(app.EffectsOpen ? Icon.Kind.Up : Icon.Kind.Down, 14));
-            body.Add(fx);
             if (app.EffectsOpen)
             {
                 var list = Ui.El("checks");
@@ -54,45 +51,45 @@ namespace MartialTactics.App
                 body.Add(list);
             }
 
-            var row = Ui.El("row", "btnrow");
-            row.Add(Ui.Btn("취소", () => app.OpenSheet(LobbySheet.None), "btn"), Ui.Btn("시작", app.OpenForgeResult, "btn", "pri"));
-            body.Add(row);
+            var foot = Ui.El("sheet-foot");
+            foot.Add(Ui.El("foot-side"));
+            foot.Add(Ui.Btn("시작", app.OpenForgeResult, "btn", "pri", "wide"));
+            var fx = new Button(() => { app.EffectsOpen = !app.EffectsOpen; app.Refresh(); });
+            fx.AddToClassList("link");
+            fx.Add(Ui.Lb("특수효과 설정", "link-t"), new Icon(app.EffectsOpen ? Icon.Kind.Down : Icon.Kind.Up, 12));
+            var side = Ui.El("foot-side", "right");
+            side.Add(fx);
+            foot.Add(side);
+            body.Add(foot);
             return dim;
         }
 
-        // 결과 창: 대장간은 분해만 (모두 분해 + 골라보기). 장착은 무인 상세 > 장비 칸 > 바꾸기
-        public static VisualElement Result(GameApp app)
+        // 자동 뽑기 결과 (크럼블 결과 창): 뽑은 장비 격자 + 골라보기 / 모두 분해. 대장간은 분해만, 장착은 무인 상세 > 장비 칸
+        public static VisualElement ResultSheet(GameApp app)
         {
-            var screen = Ui.El("screen");
-            screen.Add(Top(app.BackToLobby, "대장간"));
-            var hero = Ui.ArtBox("forge_hero", "[대장간 그림]", "hero");
-            var res = Ui.El("hero-cap");
-            res.Add(Ui.Cur(Icon.Kind.Ore, Ui.N), Ui.Cur(Icon.Kind.Flame, Ui.N));
-            hero.Add(res);
-            screen.Add(hero);
-
-            var flt = Ui.El("flt");
-            flt.Add(Ui.Lb($"쌓인 장비 {Ui.N}개", "b", "grow"));
-            flt.Add(Ui.Btn("골라보기", null, "chip"));
-            screen.Add(flt);
-
-            var sv = LobbyScreen.Scroll();
-            var grid = Ui.El("grid");
+            var dim = LobbyScreen.Sheet(app, "자동 뽑기 결과", out var body);
+            dim.AddToClassList("bottom");
+            var grid = Ui.El("gear-grid");
             for (int i = 0; i < 12; i++)
             {
-                var cell = Ui.El("cell4");
                 var slot = Ui.El("gear-cell", "empty");
                 slot.Add(Ui.Lb(Ui.GearSlots[i % 4], "lb"));
-                cell.Add(slot);
-                grid.Add(cell);
+                grid.Add(slot);
             }
-            sv.Add(grid);
-            screen.Add(sv);
-
-            var footer = Ui.El("footer", "static");
-            footer.Add(Ui.Btn("닫기", app.BackToLobby, "btn"), Ui.Btn($"모두 분해  +{Ui.N}", null, "btn", "pri", "second"));
-            screen.Add(footer);
-            return screen;
+            body.Add(grid);
+            var foot = Ui.El("sheet-foot");
+            var pick = new Button();
+            pick.AddToClassList("icon-text");
+            pick.Add(new Icon(Icon.Kind.Content, 22), Ui.Lb("골라보기", "it-t"));
+            var l = Ui.El("foot-side");
+            l.Add(pick);
+            foot.Add(l);
+            foot.Add(Ui.Btn("모두 분해", null, "btn", "pri", "wide"));
+            var r = Ui.El("foot-side", "right");
+            r.Add(Ui.Cur(Icon.Kind.Flame, $"+{Ui.N}"));
+            foot.Add(r);
+            body.Add(foot);
+            return dim;
         }
 
         // 대장간 레벨: 등급마다 지금/다음 레벨 확률, 불씨로 채우는 성장 게이지 (레벨마다 한 줄, 뽑기 경험치 없음)
@@ -177,16 +174,17 @@ namespace MartialTactics.App
             return screen;
         }
 
-        /// <summary>이름 + 드롭다운 한 줄. 펼치면 바로 아래에 고를 것 목록.</summary>
-        static VisualElement Dropdown(string label, string value, bool open, (int key, string text)[] options, int selected, Action toggle, Action<int> pick)
+        /// <summary>위에 이름, 아래 드롭다운 (크럼블 자동 열기). 펼치면 바로 아래에 목록.</summary>
+        static VisualElement Dropdown(string label, string value, string suffix, bool open, (int key, string text)[] options, int selected, Action toggle, Action<int> pick)
         {
             var box = Ui.El("dd");
-            var row = Ui.El("row", "sh-label");
-            row.Add(Ui.Lb(label, "b", "grow"));
+            box.Add(Ui.Lb(label, "dd-label"));
+            var row = Ui.El("row");
             var drop = new Button(toggle);
             drop.AddToClassList("dropdown");
-            drop.Add(Ui.Lb(value, "dd-t"), new Icon(open ? Icon.Kind.Up : Icon.Kind.Down, 14));
+            drop.Add(Ui.Lb(value, "dd-t"), Ui.El("grow"), new Icon(open ? Icon.Kind.Up : Icon.Kind.Down, 14));
             row.Add(drop);
+            if (suffix != null) row.Add(Ui.Lb(suffix, "dd-suffix"));
             box.Add(row);
             if (open)
             {
