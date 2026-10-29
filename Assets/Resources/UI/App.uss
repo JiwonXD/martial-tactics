@@ -685,3 +685,14 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .forge-box > .forge-auto { position: absolute; left: -12px; bottom: 30px; }
 .fp-mid { width: 140px; }
 .forge-box > .forge-auto { left: -4px; bottom: 56px; }
+
+/* 하단 바: 둥근 받침 없이 테두리 두른 아이콘을 바에 바로 얹음. 고른 칸은 아이콘이 살짝 올라가고 아래 이름 */
+.nav { background-color: #0b1a1b; border-top-width: 1px; border-color: #2c6360; }
+.medal, .tb.on .medal { width: 56px; height: 56px; border-width: 0; border-radius: 0; background-color: rgba(0, 0, 0, 0); }
+.tb.on .medal { translate: 0 -6px; scale: 1.08 1.08; }
+.tb.on { background-color: rgba(0, 0, 0, 0); }
+.tb, .tb.on { padding-top: 4px; }
+.tb.center > .x { width: 52px; height: 52px; margin-top: 2px; }
+/* 로비 방치 보상: 받침 없이 상자 그림만 */
+.round { width: 60px; height: 60px; border-width: 0; background-color: rgba(0, 0, 0, 0); }
+.round > .dot { right: 2px; top: 2px; }

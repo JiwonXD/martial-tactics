@@ -90,7 +90,7 @@ namespace MartialTactics.App
             var side = Ui.El("side-col");
             var reward = new Button(() => app.OpenSheet(LobbySheet.IdleReward));
             reward.AddToClassList("round");
-            reward.Add(Ui.Item(Icon.Kind.Chest, 40));
+            reward.Add(Ui.Item(Icon.Kind.Chest, 56));
             reward.Add(Ui.El("dot"));
             side.Add(reward);
             stage.Add(side);
@@ -196,7 +196,7 @@ namespace MartialTactics.App
                 bool on = app.Tab == tab;
                 // 그림 아이콘은 한지 원판 위에 (먹색 바에서도 검은 그림이 보이게)
                 var medal = Ui.El("medal");
-                medal.Add(Ui.Item(t.icon, 38));
+                medal.Add(Ui.Item(t.icon, 50));
                 b.Add(medal);
                 var name = Ui.Lb(t.name, "tbn");
                 if (on) b.AddToClassList("on");
