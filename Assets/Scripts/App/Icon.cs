@@ -6,7 +6,7 @@ namespace MartialTactics.App
     /// <summary>선으로 그리는 아이콘 (24×24 격자). 색은 글자색(color)을 따른다.</summary>
     sealed class Icon : VisualElement
     {
-        public enum Kind { Units, Growth, Content, Gacha, Forge, Gear, Close, Chest, Back, Plus }
+        public enum Kind { Units, Growth, Content, Gacha, Forge, Gear, Close, Chest, Back, Plus, Coin, Ticket, Book, Ore, Flame, Pill, Clock, Check, Next, Prev }
 
         readonly Kind kind;
 
@@ -116,6 +116,57 @@ namespace MartialTactics.App
                     p.lineWidth = 2f * s;
                     Line(12, 5, 12, 19);
                     Line(5, 12, 19, 12);
+                    break;
+                case Kind.Coin: // 골드: 네모 구멍 엽전
+                    Circle(12, 12, 8.5f);
+                    Shape(false, 9.5f, 9.5f, 14.5f, 9.5f, 14.5f, 14.5f, 9.5f, 14.5f);
+                    break;
+                case Kind.Ticket: // 뽑기권
+                    Shape(false, 3, 7, 21, 7, 21, 10, 19.5f, 12, 21, 14, 21, 17, 3, 17, 3, 14, 4.5f, 12, 3, 10);
+                    Line(15, 7.5f, 15, 9); Line(15, 11.25f, 15, 12.75f); Line(15, 15, 15, 16.5f);
+                    break;
+                case Kind.Book: // 레벨업 재화 (비급)
+                    Shape(false, 5, 3, 19, 3, 19, 21, 5, 21);
+                    Line(8, 3, 8, 21);
+                    Line(11, 8, 16, 8); Line(11, 11, 16, 11);
+                    break;
+                case Kind.Ore: // 철광석
+                    Shape(false, 4, 15, 8, 7, 14, 5, 20, 9, 19, 17, 11, 20);
+                    Line(8, 7, 11, 13, 19, 17); Line(11, 13, 14, 5);
+                    break;
+                case Kind.Flame: // 불씨
+                    p.BeginPath();
+                    p.MoveTo(P(12, 21));
+                    p.BezierCurveTo(P(6, 21), P(5, 15), P(8, 11));
+                    p.BezierCurveTo(P(8.5f, 13), P(10, 14), P(10.5f, 14));
+                    p.BezierCurveTo(P(9.5f, 9), P(12, 5), P(14, 3));
+                    p.BezierCurveTo(P(14, 7), P(19, 10), P(18, 16));
+                    p.BezierCurveTo(P(17.5f, 19), P(15, 21), P(12, 21));
+                    p.ClosePath();
+                    p.Stroke();
+                    break;
+                case Kind.Pill: // 단약
+                    Circle(12, 13, 7);
+                    p.BeginPath();
+                    p.Arc(P(12, 13), 3.5f * s, Angle.Degrees(200), Angle.Degrees(290));
+                    p.Stroke();
+                    Line(12, 3, 12, 4.5f); Line(7, 4.5f, 7.8f, 5.8f); Line(17, 4.5f, 16.2f, 5.8f);
+                    break;
+                case Kind.Clock:
+                    Circle(12, 12, 8.5f);
+                    Line(12, 7, 12, 12, 15.5f, 14);
+                    break;
+                case Kind.Check:
+                    p.lineWidth = 2.4f * s;
+                    Line(5, 12.5f, 10, 17.5f, 19, 7);
+                    break;
+                case Kind.Next:
+                    p.lineWidth = 2.2f * s;
+                    Line(9, 5, 16, 12, 9, 19);
+                    break;
+                case Kind.Prev:
+                    p.lineWidth = 2.2f * s;
+                    Line(15, 5, 8, 12, 15, 19);
                     break;
             }
         }

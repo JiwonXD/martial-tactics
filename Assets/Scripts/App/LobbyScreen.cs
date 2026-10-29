@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using MartialTactics.Battle;
 using MartialTactics.Game;
@@ -9,8 +8,8 @@ namespace MartialTactics.App
 {
     /// <summary>
     /// 로비 F안 (2026-10-29, 쿠키런: 크럼블 구조) + 화풍 A. 화면 시안 캔버스의 LobbyFIdle / StyleA.
-    /// 기본은 방치 전투 자리 + 덱 3명, 하단 바 가운데 대장간. 탭을 열면 패널이 화면 전체를 쓰고 가운데가 닫기(✕)로 바뀐다.
-    /// 하단 바는 아이콘만, 고른 칸에만 이름.
+    /// 기본은 방치 스테이지 + 덱 3명, 하단 바 가운데 대장간. 탭을 열면 패널이 화면 전체를 쓰고 가운데가 닫기(✕)로 바뀐다.
+    /// 하단 바는 아이콘만, 고른 칸에만 이름. 수치가 정해지지 않은 곳은 [n].
     /// </summary>
     static class LobbyScreen
     {
@@ -34,9 +33,22 @@ namespace MartialTactics.App
             if (app.Tab == LobbyTab.None) Idle(app, screen);
             else Panel(app, screen);
             screen.Add(NavBar(app));
-            if (app.Tab == LobbyTab.None) screen.Add(Forge());
-            if (app.SettingsOpen) screen.Add(Settings(app));
+            if (app.Tab == LobbyTab.None) screen.Add(Forge(app));
+            switch (app.Sheet)
+            {
+                case LobbySheet.Settings: screen.Add(Settings(app)); break;
+                case LobbySheet.IdleReward: screen.Add(IdleReward(app)); break;
+                case LobbySheet.ForgeAuto: screen.Add(ForgeScreens.AutoSheet(app)); break;
+            }
             return screen;
+        }
+
+        /// <summary>머리줄 재화: 레벨업 재화 · 골드 · 뽑기권 (방치 보상으로 얻는 것 중 로비에 늘 보이는 셋).</summary>
+        static VisualElement Currencies()
+        {
+            var row = Ui.El("curs");
+            row.Add(Ui.Cur(Icon.Kind.Book, Ui.N), Ui.Cur(Icon.Kind.Coin, Ui.N), Ui.Cur(Icon.Kind.Ticket, Ui.N));
+            return row;
         }
 
         // --- 기본 화면 ---
@@ -50,17 +62,21 @@ namespace MartialTactics.App
             var deck = app.Game.Data.Deck.Units;
             var top = Ui.El("ltop");
             var avatar = Ui.Portrait(app.Game.Find(deck[0]) != null ? deck[0] : null, true, "avatar");
-            top.Add(avatar, Ui.El("grow"), Ui.IconBtn(Icon.Kind.Gear, () => { app.SettingsOpen = true; app.Refresh(); }, 22, "sq"));
+            top.Add(avatar, Ui.El("grow"), Currencies(), Ui.IconBtn(Icon.Kind.Gear, () => app.OpenSheet(LobbySheet.Settings), 20, "sq"));
             stage.Add(top);
 
-            // 방치 보상·단계는 규칙이 아직 없어 자리만. 도전은 지금 있는 대전으로 이어 둔다
+            // 방치 보상 · 단계 도전. 지금 상대는 임시(무작위)라 대전 준비로 이어 둔다
             var act = Ui.El("act");
-            var reward = Ui.IconBtn(Icon.Kind.Chest, null, 26, "reward");
+            var reward = Ui.IconBtn(Icon.Kind.Chest, () => app.OpenSheet(LobbySheet.IdleReward), 26, "reward");
             reward.Add(Ui.El("dot"));
-            var challenge = Ui.Btn("도전", app.OpenBattleReady, "challenge");
+            var challenge = new Button(app.OpenBattleReady);
+            challenge.AddToClassList("challenge");
+            challenge.Add(Ui.Lb(Ui.N, "ch-n"), Ui.Lb("단계 도전", "ch-t"));
             act.Add(reward, challenge);
             stage.Add(act);
-            stage.Add(Ui.Lb("[방치 전투]", "idle-tag"));
+            var idle = Ui.El("idle-tag");
+            idle.Add(new Icon(Icon.Kind.Clock, 14), Ui.Lb($"{Ui.N}단계 방치 중", "lb"));
+            stage.Add(idle);
 
             // 덱 3명: 왼쪽부터 주장 · 부장 · 부장
             var party = Ui.El("party");
@@ -74,13 +90,17 @@ namespace MartialTactics.App
                 if (u != null)
                 {
                     card = Ui.Portrait(u.Id, false, "pcard");
-                    col.Add(card, Ui.Lb(Catalog.Unit[u.Id].Name, "pname"));
+                    Frame.On(card, new UnityEngine.Color(1, 1, 1, 0.55f), pos == 0 ? Frame.Vermilion : Frame.Paper, 4, 9);
+                    col.Add(card);
+                    var name = Ui.El("pname");
+                    name.Add(Ui.Lb(Catalog.Unit[u.Id].Name, "pn"), Ui.Bar(1, false));
+                    col.Add(name);
                 }
                 else
                 {
                     card = Ui.El("pcard", "empty");
                     card.Add(new Icon(Icon.Kind.Plus, 28));
-                    col.Add(card, Ui.Lb(" ", "pname"));
+                    col.Add(card);
                 }
                 card.Add(Ui.Lb(BattleRules.PosNames[pos], "pos-seal"));
                 col.RegisterCallback<ClickEvent>(_ =>
@@ -94,19 +114,28 @@ namespace MartialTactics.App
             screen.Add(stage);
         }
 
-        static VisualElement Forge()
+        // 대장간 (기획서 2026-10-29): 누르면 한 번 뽑기, 위는 뽑기 레벨(누르면 레벨 창), 오른쪽 위는 남은 철광석,
+        // 왼쪽은 쌓인 장비(결과 창), 왼쪽 아래 톱니는 자동 뽑기. 장비 데이터가 아직 없어 뽑기는 아무것도 하지 않는다
+        static VisualElement Forge(GameApp app)
         {
-            // 장비 뽑기 규칙(철광석·뽑기 레벨)이 아직 게임에 없어 버튼 모양만
             var wrap = Ui.El("forge-wrap");
             wrap.pickingMode = PickingMode.Ignore;
             var ring = Ui.El("forge-ring");
-            var forge = new Button { };
+            var forge = new Button();
             forge.AddToClassList("forge");
-            forge.Add(new Icon(Icon.Kind.Forge, 44));
+            var lv = new Button(app.OpenForgeLevel) { text = $"Lv {Ui.N}" };
+            lv.AddToClassList("forge-lv");
+            forge.Add(lv);
+            forge.Add(new Icon(Icon.Kind.Forge, 42));
             forge.Add(Ui.Lb("대장간", "forge-name"));
             ring.Add(forge);
-            var gear = Ui.IconBtn(Icon.Kind.Gear, null, 16, "forge-gear");
-            ring.Add(gear);
+            var ore = Ui.El("forge-ore");
+            ore.Add(new Icon(Icon.Kind.Ore, 12), Ui.Lb(Ui.N, "fo-n"));
+            ring.Add(ore);
+            var stack = new Button(app.OpenForgeResult) { text = $"{Ui.N}개" };
+            stack.AddToClassList("forge-stack");
+            ring.Add(stack);
+            ring.Add(Ui.IconBtn(Icon.Kind.Gear, () => app.OpenSheet(LobbySheet.ForgeAuto), 16, "forge-gear"));
             wrap.Add(ring);
             return wrap;
         }
@@ -137,35 +166,68 @@ namespace MartialTactics.App
             return nav;
         }
 
-        static VisualElement Settings(GameApp app)
+        public static VisualElement Sheet(GameApp app, string title, out VisualElement body)
         {
             var dim = Ui.El("modal");
             dim.RegisterCallback<ClickEvent>(e =>
             {
                 if (e.target != dim) return;
-                app.SettingsOpen = app.ConfirmReset = false;
-                app.Refresh();
+                app.OpenSheet(LobbySheet.None);
             });
             var sheet = Ui.El("sheet");
-            sheet.Add(Ui.Lb("설정", "sheet-title"));
+            var head = Ui.El("sheet-head");
+            head.Add(Ui.Band(title), Ui.El("grow"), Ui.IconBtn(Icon.Kind.Close, () => app.OpenSheet(LobbySheet.None), 20, "back"));
+            sheet.Add(head);
+            body = Ui.El("sheet-body");
+            sheet.Add(body);
+            Frame.On(sheet, Frame.Bronze, Frame.Vermilion, 5, 12);
+            dim.Add(sheet);
+            return dim;
+        }
+
+        static VisualElement Settings(GameApp app)
+        {
+            var dim = Sheet(app, "설정", out var body);
             if (!app.ConfirmReset)
             {
-                sheet.Add(Ui.Btn("저장 초기화", () => { app.ConfirmReset = true; app.Refresh(); }, "btn"));
+                body.Add(Ui.Btn("저장 초기화", () => { app.ConfirmReset = true; app.Refresh(); }, "btn"));
             }
             else
             {
-                sheet.Add(Ui.Lb("보유 무인 · 무공 · 덱 삭제", "warn"));
-                var row = Ui.El("row");
-                var no = Ui.Btn("취소", () => { app.ConfirmReset = false; app.Refresh(); }, "btn");
-                var yes = Ui.Btn("초기화", app.ResetSave, "btn", "danger");
-                no.style.flexGrow = 1;
-                yes.style.flexGrow = 1;
-                yes.style.marginLeft = 8;
-                row.Add(no, yes);
-                sheet.Add(row);
+                body.Add(Ui.Lb("보유 무인 · 무공 · 덱 삭제", "warn"));
+                var row = Ui.El("row", "btnrow");
+                row.Add(Ui.Btn("취소", () => { app.ConfirmReset = false; app.Refresh(); }, "btn"), Ui.Btn("초기화", app.ResetSave, "btn", "danger"));
+                body.Add(row);
             }
-            sheet.Add(Ui.Btn("닫기", () => { app.SettingsOpen = app.ConfirmReset = false; app.Refresh(); }, "btn", "flat"));
-            dim.Add(sheet);
+            return dim;
+        }
+
+        // 방치 보상 (기획서 2026-10-28~29): 레벨업 재화 · 골드 · 뽑기권 · 장비 강화 재료 · 철광석 · 단약.
+        // 쌓이는 최대 시간과 양은 폐관수련 특별 수련으로 늘어난다
+        static VisualElement IdleReward(GameApp app)
+        {
+            var dim = Sheet(app, "방치 보상", out var body);
+            var time = Ui.El("idle-time");
+            time.Add(new Icon(Icon.Kind.Clock, 18), Ui.Lb($"{Ui.N}:{Ui.N}", "it-n"), Ui.El("grow"), Ui.Lb($"최대 {Ui.N}시간", "lb"));
+            body.Add(time);
+            var grid = Ui.El("rewards");
+            foreach (var (icon, name) in new[]
+                     {
+                         (Icon.Kind.Book, "레벨업 재화"), (Icon.Kind.Coin, "골드"), (Icon.Kind.Ticket, "뽑기권"),
+                         (Icon.Kind.Gear, "강화 재료"), (Icon.Kind.Ore, "철광석"), (Icon.Kind.Pill, "단약"),
+                     })
+            {
+                var cell = Ui.El("rw");
+                var box = Ui.El("rw-icon");
+                box.Add(new Icon(icon, 26));
+                Frame.On(box, Frame.Bronze, Frame.Bronze, 3, 6);
+                cell.Add(box, Ui.Lb(Ui.N, "rw-n"), Ui.Lb(name, "rw-name"));
+                grid.Add(cell);
+            }
+            body.Add(grid);
+            var get = Ui.Btn("받기", () => app.OpenSheet(LobbySheet.None), "btn", "pri");
+            get.style.marginTop = 14;
+            body.Add(get);
             return dim;
         }
 
@@ -176,7 +238,7 @@ namespace MartialTactics.App
             var head = Ui.El("phead");
             string title = Tabs.First(t => t.tab == app.Tab).name;
             if (app.Tab == LobbyTab.Growth) title = "폐관수련";
-            head.Add(Ui.Lb(title, "ptitle"));
+            head.Add(Ui.Band(title), Ui.El("grow"), Currencies());
             screen.Add(head);
 
             var body = Ui.El("pbody");
@@ -187,37 +249,42 @@ namespace MartialTactics.App
                     {
                         case UnitsSub.List: UnitList(app, body); break;
                         case UnitsSub.Deck: DeckEdit(app, body); break;
-                        case UnitsSub.LevelUp: body.Add(Fill("[무인 레벨업]")); break;
-                        case UnitsSub.Gear: body.Add(Fill("[장비]")); break;
+                        case UnitsSub.LevelUp: GrowthScreens.LevelUp(app, body); break;
+                        case UnitsSub.Gear: GrowthScreens.GearList(app, body); break;
                     }
                     break;
-                case LobbyTab.Growth: body.Add(Fill("[폐관수련]")); break;
-                case LobbyTab.Content: Content(app, body); break;
-                case LobbyTab.Gacha: Gacha(app, body); break;
+                case LobbyTab.Growth: GrowthScreens.Research(app, body); break;
+                case LobbyTab.Content:
+                    if (app.Content == ContentSub.Match) ContentScreens.Match(app, body);
+                    else ContentScreens.Dungeons(app, body);
+                    break;
+                case LobbyTab.Gacha: ContentScreens.Gacha(app, body); break;
             }
             screen.Add(body);
 
             if (app.Tab == LobbyTab.Units)
-            {
-                var subs = Ui.El("subs");
-                foreach (var s in Subs)
+                screen.Add(SubBar(Subs.Select(s => (s.name, app.Sub == s.sub, (Action)(() => app.OpenSub(s.sub))))));
+            if (app.Tab == LobbyTab.Content)
+                screen.Add(SubBar(new[]
                 {
-                    var sub = s.sub;
-                    var b = Ui.Btn(s.name, () => app.OpenSub(sub), "sub");
-                    if (app.Sub == sub) b.AddToClassList("on");
-                    subs.Add(b);
-                }
-                screen.Add(subs);
-            }
+                    ("대전", app.Content == ContentSub.Match, (Action)(() => app.OpenContent(ContentSub.Match))),
+                    ("일일 던전", app.Content == ContentSub.Dungeon, (Action)(() => app.OpenContent(ContentSub.Dungeon))),
+                }));
         }
 
-        static VisualElement Fill(string text)
+        static VisualElement SubBar(System.Collections.Generic.IEnumerable<(string name, bool on, Action open)> items)
         {
-            var e = Ui.Placeholder(text, -1, -1, "fill-ph");
-            return e;
+            var subs = Ui.El("subs");
+            foreach (var s in items)
+            {
+                var b = Ui.Btn(s.name, s.open, "sub");
+                if (s.on) b.AddToClassList("on");
+                subs.Add(b);
+            }
+            return subs;
         }
 
-        static ScrollView Scroll()
+        public static ScrollView Scroll()
         {
             var sv = new ScrollView(ScrollViewMode.Vertical) { verticalScrollerVisibility = ScrollerVisibility.Hidden };
             sv.AddToClassList("pscroll");
@@ -236,7 +303,7 @@ namespace MartialTactics.App
                 if (app.StarFilter == s) chip.AddToClassList("on");
                 flt.Add(chip);
             }
-            flt.Add(Ui.El("grow"), Ui.Lb($"{units.Count}", "count"));
+            flt.Add(Ui.El("grow"), Ui.Lb($"{units.Count} / {Catalog.Units.Count}", "count"));
             body.Add(flt);
 
             var sv = Scroll();
@@ -266,6 +333,7 @@ namespace MartialTactics.App
             body.Add(sv);
         }
 
+        /// <summary>무인 카드: 초상 + 장식 틀 + 별·이름. 등급이 높을수록 틀이 굵다 (등급 색은 미정).</summary>
         public static VisualElement UnitCard(string id, int promotions, int spare)
         {
             var d = Catalog.Unit[id];
@@ -273,6 +341,8 @@ namespace MartialTactics.App
             int stars = GameState.Stars(id);
             card.AddToClassList("s" + stars);
             var pic = Ui.Portrait(id, false, "upic");
+            Frame.On(pic, new UnityEngine.Color(1, 1, 1, 0.45f), stars >= 5 ? Frame.Vermilion : Frame.Paper, 3, 8);
+            pic.Add(Ui.Lb($"Lv {Ui.N}", "lv"));
             if (spare > 0) pic.Add(Ui.Lb($"+{spare}", "spare"));
             card.Add(pic);
             var cap = Ui.El("ucap");
@@ -286,6 +356,17 @@ namespace MartialTactics.App
         {
             var deck = app.Game.Data.Deck;
             var sv = Scroll();
+
+            // 엔트리(덱 여러 개) 수는 미정이라 덱 탭은 자리만
+            var decks = Ui.El("decktabs");
+            for (int i = 0; i < 3; i++)
+            {
+                var b = Ui.Btn($"덱 {i + 1}", null, "chip");
+                if (i == 0) b.AddToClassList("on");
+                else b.SetEnabled(false);
+                decks.Add(b);
+            }
+            sv.Add(decks);
 
             var el = Ui.El("elements");
             foreach (var e in BattleRules.Elements)
@@ -310,6 +391,7 @@ namespace MartialTactics.App
                 {
                     var d = Catalog.Unit[u.Id];
                     var pic = Ui.Portrait(u.Id, false, "dpic");
+                    Frame.On(pic, new UnityEngine.Color(1, 1, 1, 0.5f), pos == 0 ? Frame.Vermilion : Frame.Paper, 4, 9);
                     if (ei >= 0) pic.Add(Ui.Lb(d.Apt[ei].ToString(), "apt-badge"));
                     pic.Add(Ui.IconBtn(Icon.Kind.Close, () => { deck.Units[p] = ""; app.Save(); app.Refresh(); }, 14, "dremove"));
                     col.Add(pic, Ui.Lb(Ui.Stars(u.Id, u.Promotions), "sr"), Ui.Lb(d.Name, "un"));
@@ -338,72 +420,6 @@ namespace MartialTactics.App
             go.SetEnabled(errors.Count == 0);
             foot.Add(go);
             sv.Add(foot);
-            body.Add(sv);
-        }
-
-        // 컨텐츠: 대전 묶음 배너 목록. 지금 돌아가는 건 대전(임시 상대)뿐
-        static void Content(GameApp app, VisualElement body)
-        {
-            var sv = Scroll();
-            sv.Add(Banner("대전", "對戰", app.OpenBattleReady));
-            sv.Add(Banner("순위전", "順位", null));
-            sv.Add(Banner("위너스", "連戰", null));
-            sv.Add(Banner("단약 던전", "丹藥", null));
-            body.Add(sv);
-        }
-
-        static VisualElement Banner(string name, string seal, Action open)
-        {
-            var b = Ui.El("banner-card");
-            if (open == null) b.AddToClassList("locked");
-            else b.RegisterCallback<ClickEvent>(_ => open());
-            var art = Ui.Placeholder("[배너 그림]", -1, -1, "banner-art");
-            b.Add(art);
-            var text = Ui.El("banner-text");
-            text.Add(Ui.Lb(name, "banner-name"));
-            b.Add(text);
-            b.Add(Ui.Lb(seal, "banner-seal"));
-            return b;
-        }
-
-        // 뽑기: 테스트 기간이라 무료. 결과는 카드로
-        static void Gacha(GameApp app, VisualElement body)
-        {
-            var sv = Scroll();
-            var hero = Ui.Placeholder("[무인 뽑기 그림]", -1, 220, "gacha-art");
-            sv.Add(hero);
-            var row = Ui.El("gacha-btns");
-            var one = Ui.Btn("1회", () => { app.LastDraw = app.Game.Draw(1); app.Save(); app.Refresh(); }, "btn");
-            var ten = Ui.Btn("10회", () => { app.LastDraw = app.Game.Draw(10); app.Save(); app.Refresh(); }, "btn", "pri");
-            row.Add(one, ten);
-            sv.Add(row);
-
-            // 1회는 한 장을 크게
-            if (app.LastDraw.Count == 1)
-            {
-                var r = app.LastDraw[0];
-                var big = Ui.El("draw-one");
-                var card = LobbyScreen.UnitCard(r.Unit, 0, 0);
-                card.AddToClassList("big");
-                card.Q(className: "portrait").Add(Ui.Lb(r.New ? "NEW" : "+1", r.New ? "new" : "dup"));
-                big.Add(card);
-                sv.Add(big);
-                body.Add(sv);
-                return;
-            }
-            var grid = Ui.El("drawgrid");
-            foreach (var r in app.LastDraw)
-            {
-                var cell = Ui.El("cell5");
-                var card = Ui.El("dcard");
-                card.AddToClassList("s" + GameState.Stars(r.Unit));
-                var pic = Ui.Portrait(r.Unit, true, "dface");
-                pic.Add(Ui.Lb(r.New ? "NEW" : "+1", r.New ? "new" : "dup"));
-                card.Add(pic, Ui.Lb(Catalog.Unit[r.Unit].Name, "dn"));
-                cell.Add(card);
-                grid.Add(cell);
-            }
-            sv.Add(grid);
             body.Add(sv);
         }
     }

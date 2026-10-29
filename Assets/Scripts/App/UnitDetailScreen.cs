@@ -8,7 +8,7 @@ namespace MartialTactics.App
     /// <summary>무인 상세 A안 (2026-10-28 확정): 일러스트 위, 정보 아래. 화면 시안 캔버스의 UnitDetailA.</summary>
     static class UnitDetailScreen
     {
-        public static VisualElement Build(GameState game, OwnedUnit u, Action back, Action<int> pickSkill, Action cardUse)
+        public static VisualElement Build(GameState game, OwnedUnit u, Action back, Action<int> pickSkill, Action cardUse, Action<int> equip)
         {
             var d = Catalog.Unit[u.Id];
             var e = GameState.EffectiveDef(u);
@@ -24,8 +24,9 @@ namespace MartialTactics.App
             head.Add(Ui.Portrait(u.Id, false, "illust"));
             var card = Ui.El("namecard");
             card.Add(Ui.Lb($"{Ui.Stars(u.Id, u.Promotions)}  <color=#5c564d>{GameState.Rank(stars)} · 승급 {u.Promotions}/{stars}</color>", "stars"));
-            card.Add(Ui.Lb(d.Name, "uname"));
+            card.Add(Ui.El("row").Add(Ui.Lb(d.Name, "uname"), Ui.Lb("Lv [n]", "lvtag")));
             card.Add(Ui.Lb($"{d.Title} · {d.Faction}", "lb"));
+            Frame.On(card, Frame.Bronze, Frame.Vermilion, 3, 8);
             head.Add(card);
             scroll.Add(head);
             screen.Add(Ui.IconBtn(Icon.Kind.Back, back, 22, "back", "float"));
@@ -33,7 +34,6 @@ namespace MartialTactics.App
             var body = Ui.El("detail-body");
             scroll.Add(body);
 
-            // 레벨은 있다고 정했지만 성장 규칙이 아직 없어 자리만 둔다
             var stats = Ui.El("grid5");
             stats.Add(Stat("체력", d.Hp, 0, true));
             int[] baseStats = { d.Ext, d.Int, d.Def, d.Spd };
@@ -79,19 +79,9 @@ namespace MartialTactics.App
                 body.Add(row);
             }
 
-            // 장비 (2026-10-28 추가): 칸 이름만 정해졌고 등급·효과·획득은 미정이라 빈 칸만 보인다
+            // 장비 4칸 (2026-10-29): 칸마다 주 스탯 하나. 장비 데이터가 아직 없어 빈 칸, 누르면 장비 바꾸기
             body.Add(Ui.Lb("장비", "lb", "section"));
-            var gear = Ui.El("grid5");
-            gear.style.marginTop = 6;
-            string[] gearSlots = { "무기", "옷", "신발", "옥패" }; // 2026-10-29: 무기 = 외공 · 옷 = 호신 · 신발 = 경공 · 옥패 = 내공
-            for (int i = 0; i < gearSlots.Length; i++)
-            {
-                var c = Ui.El("cell", "eq");
-                if (i == 0) c.AddToClassList("first");
-                c.Add(Ui.Lb(gearSlots[i], "b"), Ui.Lb("비어 있음", "lb"));
-                gear.Add(c);
-            }
-            body.Add(gear);
+            body.Add(GearRow(i => equip(i)));
 
             var bottom = Ui.El("bottombar");
             bottom.Add(Ui.El().Add(Ui.Lb("중복 카드", "lb"), Ui.Lb($"{u.Spare}장", "b")), Ui.El("grow"));
@@ -101,6 +91,23 @@ namespace MartialTactics.App
             bottom.Add(use);
             screen.Add(bottom);
             return screen;
+        }
+
+        /// <summary>장비 4칸 한 줄. 빈 칸은 칸 이름과 그 칸의 주 스탯.</summary>
+        public static VisualElement GearRow(Action<int> tap)
+        {
+            var gear = Ui.El("grid5");
+            gear.style.marginTop = 6;
+            for (int i = 0; i < Ui.GearSlots.Length; i++)
+            {
+                int slot = i;
+                var c = Ui.El("cell", "eq");
+                if (i == 0) c.AddToClassList("first");
+                c.Add(Ui.Lb(Ui.GearSlots[i], "b"), Ui.Lb(Ui.GearStats[i], "lb"));
+                c.RegisterCallback<ClickEvent>(_ => tap(slot));
+                gear.Add(c);
+            }
+            return gear;
         }
 
         static VisualElement Stat(string name, int value, int added, bool first)

@@ -36,6 +36,8 @@ namespace MartialTactics.App
             root = doc.rootVisualElement;
             root.styleSheets.Add(Resources.Load<StyleSheet>("UI/App"));
             root.AddToClassList("app-root");
+            var paper = Art.Load("Art/hanji"); // 한지 질감. 없으면 USS의 단색
+            if (paper != null) root.style.backgroundImage = new StyleBackground(paper);
             ApplyKoreanFont(root);
             Hide();
         }
