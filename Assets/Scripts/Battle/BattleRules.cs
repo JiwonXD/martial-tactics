@@ -17,7 +17,7 @@ namespace MartialTactics.Battle
 
     public enum SkillType { Formation, Aura, Active, Chase, Passive }
 
-    public enum StatusKind { Stun, Confuse, Silence, Disarm, Taunt, Poison, Bleed, Injury, Guard }
+    public enum StatusKind { Stun, Confuse, Silence, Disarm, Taunt, Poison, Bleed, Injury, Guard, Stealth }
 
     /// <summary>고정 규칙과 표시 이름.</summary>
     public static class BattleRules
@@ -48,6 +48,7 @@ namespace MartialTactics.Battle
             { StatusKind.Stun, "점혈" }, { StatusKind.Confuse, "혼란" }, { StatusKind.Silence, "봉인" },
             { StatusKind.Disarm, "무장해제" }, { StatusKind.Taunt, "도발" }, { StatusKind.Poison, "중독" },
             { StatusKind.Bleed, "출혈" }, { StatusKind.Injury, "내상" }, { StatusKind.Guard, "호위" },
+            { StatusKind.Stealth, "은신" },
         };
 
         // 청심결이 해제하는 순서

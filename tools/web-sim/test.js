@@ -96,6 +96,32 @@ assert(jikdo > 0 && guarded > 0 && talExtra > 0 && geumnaStun > 0, JSON.stringif
   assert(reflect > 0 && sajung > 0 && hyeolmaek > 0 && early === 0, JSON.stringify({ reflect, sajung, hyeolmaek, early }));
 }
 
+// 3-4. 출시 무인 새 부품: 은신, 회피 반격, 피해 되돌리기, 표적, 지속 피해 터뜨리기
+{
+  const 은신 = { element: '금', slots: [
+    { unit: 'bokmyeon', skills: ['maehwa', null] }, { unit: 'muyeong', skills: [null, null] }, { unit: 'nocho', skills: [null, null] } ] };
+  const 상대 = { element: '토', slots: [
+    { unit: 'jangwiwon', skills: [null, null] }, { unit: 'danorang', skills: [null, null] }, { unit: 'heukjeop', skills: [null, null] } ] };
+  assert.deepStrictEqual(S.validateTeam(은신), []);
+  assert.deepStrictEqual(S.validateTeam(상대), []);
+  const seen = { counter: 0, flat: 0, burst: 0 };
+  for (let seed = 1; seed <= 100; seed++) {
+    const r = new S.Battle(은신, 상대, { seed, log: true }).run();
+    // 은신(2합)은 무영의 2합 차례가 끝날 때 풀리므로 1합 동안은 평타 대상이 안 됨 (공격한 무영에게 오는 반격은 맞음)
+    r.log.filter(l => l.round === 1).forEach(l => {
+      if (/^\[적\] \S+의 평타 → \[아\] 무영/.test(l.text)) assert.fail('은신한 무영이 공격당함: ' + l.text);
+    });
+    r.log.forEach(l => {
+      if (l.text.includes('[적] 단오랑의 취권 →')) seen.counter++;
+      if (l.text.includes('(되돌림')) seen.flat++;
+      if (l.text.includes('중독 터짐')) seen.burst++;
+    });
+    // 표적: 복면객이 준비 합에 적 1명을 표적으로 정함
+    assert(r.units[0].mark && r.units[0].mark.target.side === 'B');
+  }
+  assert(seen.counter > 0 && seen.flat > 0 && seen.burst > 0, JSON.stringify(seen));
+}
+
 // 4. 승패 판정: 주장이 쓰러진 쪽이 진다, 무승부는 주장 둘 다 생존
 let leaderChecks = 0, stunImmune = 0, hpJudged = 0;
 for (let seed = 1; seed <= 3000; seed++) {

@@ -22,7 +22,7 @@
   const TYPE_NAMES = { formation: '진법', aura: '개전', active: '발동', chase: '연계', passive: '상시' };
   const STATUS_NAMES = {
     stun: '점혈', confuse: '혼란', silence: '봉인', disarm: '무장해제',
-    taunt: '도발', poison: '중독', bleed: '출혈', injury: '내상', guard: '호위',
+    taunt: '도발', poison: '중독', bleed: '출혈', injury: '내상', guard: '호위', stealth: '은신',
   };
   const DEBUFFS = ['stun', 'confuse', 'silence', 'disarm', 'poison', 'bleed', 'injury'];
   const CONTROLS = ['stun', 'confuse', 'silence', 'disarm']; // 두전성이가 되돌리는 제어, 제어 적중·저항이 걸리는 상태
@@ -170,6 +170,232 @@
     { id: 'gwangpung', name: '광풍쾌검', type: 'passive',
       desc: '무기 피해 치명타 확률 +25% (치명타 시 1.5배)',
       setup: (b, u) => b.addMod(u, 'crit', 0.25, Infinity, '광풍쾌검') },
+    // ---- 출시 무인 50명 무공 (수치는 임시, 밸런스 때 시뮬레이터로 정함) ----
+    { id: 'sorimgon', name: '소림곤법', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 130%, 2합 동안 자신이 받는 무기 피해 -15%',
+      cast: (b, u, t) => { b.damage(u, t, 'ext', 1.3, '소림곤법'); b.addMod(u, 'takenExt', -0.15, 2, '소림곤법'); } },
+    { id: 'yeonhwarak', name: '연화락', type: 'active', rate: 35,
+      desc: '적 2명에게 무기 피해 80%, 2합 동안 그 적들이 받는 피해 +15%',
+      cast: (b, u) => b.pickEnemies(u, 2).forEach(t => { b.damage(u, t, 'ext', 0.8, '연화락'); b.addMod(t, 'taken', 0.15, 2, '연화락'); }) },
+    { id: 'chwigwon', name: '취권', type: 'passive',
+      desc: '회피 +20%, 회피하면 50% 확률로 반격 (무기 피해 80%)',
+      setup: (b, u) => {
+        b.addMod(u, 'evade', 0.2, Infinity, '취권');
+        u.hooks.evaded.push(src => { if (!src.dead && b.rand() < 0.5) b.damage(u, src, 'ext', 0.8, '취권', { counter: true }); });
+      } },
+    { id: 'dapseol', name: '답설무흔', type: 'aura',
+      desc: '1~3합 동안 자신 경공 +20%, 회피 +15%',
+      setup: (b, u) => { b.addMod(u, 'spd', 0.2, 3, '답설무흔'); b.addMod(u, 'evade', 0.15, 3, '답설무흔'); } },
+    { id: 'tongbae', name: '통배권', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 120%, 2합 동안 대상 호신 -20%',
+      cast: (b, u, t) => { b.damage(u, t, 'ext', 1.2, '통배권'); b.addMod(t, 'def', -0.2, 2, '통배권'); } },
+    { id: 'sipgubong', name: '십구봉검', type: 'chase', rate: 35,
+      desc: '평타 후 같은 적에게 무기 피해 80% 2회, 이 공격의 치명타 확률 +20%',
+      cast: (b, u, t) => {
+        b.addMod(u, 'crit', 0.2, Infinity, '십구봉검');
+        b.damage(u, t, 'ext', 0.8, '십구봉검');
+        b.damage(u, t, 'ext', 0.8, '십구봉검');
+        u.mods = u.mods.filter(m => m.label !== '십구봉검');
+      } },
+    { id: 'cheonsa', name: '천사검', type: 'active', rate: 35,
+      desc: '적 1명에게 내공 피해 140%, 자신에게 걸린 상태이상 1개 해제',
+      cast: (b, u) => { b.pickEnemies(u, 1).forEach(t => b.damage(u, t, 'int', 1.4, '천사검')); b.cleanse(u, u, '천사검'); } },
+    { id: 'nodo', name: '노도검', type: 'active', rate: 30,
+      desc: '적 전체에게 무기 피해 70%',
+      cast: (b, u) => b.pickEnemies(u, 3).forEach(t => b.damage(u, t, 'ext', 0.7, '노도검')) },
+    { id: 'dogeom', name: '도검쌍행', type: 'active', rate: 35,
+      desc: '적 2명에게 무기 피해 90%, 자신 외공 +8% (3번까지 쌓임)',
+      cast: (b, u) => {
+        b.pickEnemies(u, 2).forEach(t => b.damage(u, t, 'ext', 0.9, '도검쌍행'));
+        b.addMod(u, 'ext', 0.08 * b.stack(u, '도검쌍행', 3), Infinity, '도검쌍행');
+      } },
+    { id: 'yukhap', name: '육합대창', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 130%, 대상이 주장이면 180%',
+      cast: (b, u, t) => b.damage(u, t, 'ext', t.pos === 0 ? 1.8 : 1.3, '육합대창') },
+    { id: 'bunggwon', name: '붕권', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 120%, 대상이 내상 상태면 180%',
+      cast: (b, u, t) => b.damage(u, t, 'ext', t.status.injury ? 1.8 : 1.2, '붕권') },
+    { id: 'chilseong', name: '칠성검', type: 'aura',
+      desc: '1~3합 동안 아군 전체 받는 피해 -12%',
+      setup: (b, u) => b.allies(u).forEach(a => b.addMod(a, 'taken', -0.12, 3, '칠성검')) },
+    { id: 'namak', name: '남악검', type: 'active', rate: 35,
+      desc: '적 1명에게 무기 피해 130% + 출혈(2합)',
+      cast: (b, u) => b.pickEnemies(u, 1).forEach(t => {
+        b.damage(u, t, 'ext', 1.3, '남악검');
+        b.addStatus(u, t, 'bleed', 2, { kind: 'ext', coef: 0.4 });
+      }) },
+    { id: 'jungak', name: '중악검', type: 'active', rate: 35, prep: true,
+      desc: '1합 기를 모은 뒤 적 2명에게 무기 피해 160%',
+      cast: (b, u) => b.pickEnemies(u, 2).forEach(t => b.damage(u, t, 'ext', 1.6, '중악검')) },
+    { id: 'bugak', name: '북악검', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 110%, 자신 호신 +6% (4번까지 쌓임)',
+      cast: (b, u, t) => { b.damage(u, t, 'ext', 1.1, '북악검'); b.addMod(u, 'def', 0.06 * b.stack(u, '북악검', 4), Infinity, '북악검'); } },
+    { id: 'cheolsa', name: '철사장', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 120% + 내상(2합)',
+      cast: (b, u, t) => { b.damage(u, t, 'ext', 1.2, '철사장'); b.addStatus(u, t, 'injury', 2); } },
+    { id: 'mosan', name: '모산부록', type: 'active', rate: 30,
+      desc: '적 1명에게 내공 피해 100% + 혼란(1합)',
+      cast: (b, u) => b.pickEnemies(u, 1).forEach(t => { b.damage(u, t, 'int', 1.0, '모산부록'); b.addStatus(u, t, 'confuse', 1); }) },
+    { id: 'ilbu', name: '일부당관', type: 'aura',
+      desc: '1~2합 동안 자신에게 도발, 도발 중 평타에 맞으면 30% 확률로 반격 (무기 피해 70%)',
+      setup: (b, u) => {
+        b.addStatus(u, u, 'taunt', 2);
+        u.hooks.damaged.push((src, info) => {
+          if (info.normal && u.status.taunt && !src.dead && b.rand() < 0.3) b.damage(u, src, 'ext', 0.7, '일부당관', { counter: true });
+        });
+      } },
+    { id: 'sujeon', name: '수전', type: 'active', rate: 35,
+      desc: '적 1명에게 무기 피해 100% + 봉인(1합)',
+      cast: (b, u) => b.pickEnemies(u, 1).forEach(t => { b.damage(u, t, 'ext', 1.0, '수전'); b.addStatus(u, t, 'silence', 1); }) },
+    { id: 'mihon', name: '미혼향', type: 'active', rate: 35,
+      desc: '적 2명에게 중독(3합, 매 합 내공 피해 40%), 이미 중독된 적은 혼란(1합)',
+      cast: (b, u) => b.pickEnemies(u, 2).forEach(t => {
+        if (t.status.poison) b.addStatus(u, t, 'confuse', 1);
+        else b.addStatus(u, t, 'poison', 3, { kind: 'int', coef: 0.4 });
+      }) },
+    { id: 'juwi', name: '주위상', type: 'passive',
+      desc: '체력이 40% 아래로 처음 떨어지면 2합 동안 회피 +40%',
+      setup: (b, u) => u.hooks.damaged.push(() => {
+        if (u.stacks['주위상'] || u.hp / u.maxHp >= 0.4) return;
+        b.stack(u, '주위상', 1);
+        b.addMod(u, 'evade', 0.4, 2, '주위상');
+        b.log(`${b.tag(u)}의 주위상: 2합 동안 회피 +40%`);
+      }) },
+    { id: 'sampan', name: '삼판부', type: 'active', rate: 35,
+      desc: '적 1명에게 무기 피해, 1~3번째 발동은 180%, 그 뒤엔 80%',
+      cast: (b, u) => b.pickEnemies(u, 1).forEach(t => b.damage(u, t, 'ext', u.rec.procs.sampan <= 3 ? 1.8 : 0.8, '삼판부')) },
+    { id: 'yeonju', name: '연주전', type: 'active', rate: 35,
+      desc: '무작위 적에게 3회 무기 피해 60%',
+      cast: (b, u) => { for (let i = 0; i < 3; i++) b.pickEnemies(u, 1).forEach(t => b.damage(u, t, 'ext', 0.6, '연주전')); } },
+    { id: 'nangri', name: '낭리백조', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 110%, 2합 동안 대상 경공 -20%',
+      cast: (b, u, t) => { b.damage(u, t, 'ext', 1.1, '낭리백조'); b.addMod(t, 'spd', -0.2, 2, '낭리백조'); } },
+    { id: 'biyeon', name: '비연도', type: 'aura',
+      desc: '1합 시작 때 무작위 적 2명에게 무기 피해 60%, 1~3합 동안 자신 경공 +20%',
+      setup: (b, u) => {
+        b.addMod(u, 'spd', 0.2, 3, '비연도');
+        u.hooks.roundStart.push(() => { if (b.round === 1) b.pickEnemies(u, 2).forEach(t => b.damage(u, t, 'ext', 0.6, '비연도')); });
+      } },
+    { id: 'jegalno', name: '제갈노', type: 'active', rate: 35,
+      desc: '적 1명에게 3회 무기 피해 50%',
+      cast: (b, u) => b.pickEnemies(u, 1).forEach(t => { for (let i = 0; i < 3; i++) b.damage(u, t, 'ext', 0.5, '제갈노'); }) },
+    { id: 'dogung', name: '도궁비현', type: 'active', rate: 35,
+      desc: '체력 비율이 가장 낮은 적 1명에게 무기 피해 160%',
+      cast: (b, u) => { const t = b.lowestHpFoe(u); if (t) b.damage(u, t, 'ext', 1.6, '도궁비현'); } },
+    { id: 'maehwa', name: '매화침', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 중독(3합, 매 합 내공 피해 40%), 이미 중독이면 중독 피해가 바로 한 번 터짐',
+      cast: (b, u, t) => { if (t.status.poison) b.burstDot(t, 'poison'); else b.addStatus(u, t, 'poison', 3, { kind: 'int', coef: 0.4 }); } },
+    { id: 'jamyeong', name: '잠영보', type: 'aura',
+      desc: '1~2합 동안 은신 (적이 노리지 못함), 처음 주는 피해 +30%',
+      setup: (b, u) => {
+        b.addStatus(u, u, 'stealth', 2);
+        b.addMod(u, 'dealt', 0.3, Infinity, '잠영보');
+        u.hooks.dealt.push(() => { u.mods = u.mods.filter(m => m.label !== '잠영보'); });
+      } },
+    { id: 'wolha', name: '월하독작', type: 'passive',
+      desc: '매 합 시작 시 쓰러진 아군 1명마다 자신 주는 피해 +15%',
+      setup: (b, u) => u.hooks.roundStart.push(() => {
+        const down = b.units.filter(a => a.side === u.side && a.dead).length;
+        if (down) b.addMod(u, 'dealt', 0.15 * down, Infinity, '월하독작');
+      }) },
+    { id: 'poseung', name: '포승술', type: 'chase', rate: 35,
+      desc: '평타 후 같은 적 무장해제(1합) + 2합 동안 경공 -20%',
+      cast: (b, u, t) => { b.addStatus(u, t, 'disarm', 1); b.addMod(t, 'spd', -0.2, 2, '포승술'); } },
+    { id: 'changnyong', name: '창룡출해', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 110%, 다른 적 1명에게도 60%',
+      cast: (b, u, t) => {
+        b.damage(u, t, 'ext', 1.1, '창룡출해');
+        const others = b.targets(u).filter(x => x !== t);
+        if (others.length) b.damage(u, b.weightedPick(others), 'ext', 0.6, '창룡출해');
+      } },
+    { id: 'wonang', name: '원앙검', type: 'active', rate: 35,
+      desc: '적 2명에게 무기 피해 100%',
+      cast: (b, u) => b.pickEnemies(u, 2).forEach(t => b.damage(u, t, 'ext', 1.0, '원앙검')) },
+    { id: 'maengho', name: '맹호하산', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 110%, 대상 체력 비율이 70% 이상이면 170%',
+      cast: (b, u, t) => b.damage(u, t, 'ext', t.hp / t.maxHp >= 0.7 ? 1.7 : 1.1, '맹호하산') },
+    { id: 'hojo', name: '호조수', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 100% + 출혈(2합)',
+      cast: (b, u, t) => { b.damage(u, t, 'ext', 1.0, '호조수'); b.addStatus(u, t, 'bleed', 2, { kind: 'ext', coef: 0.4 }); } },
+    { id: 'deungpae', name: '등패술', type: 'passive',
+      desc: '받는 무기 피해 -15%, 평타에 맞으면 25% 확률로 공격자 무장해제(1합)',
+      setup: (b, u) => {
+        b.addMod(u, 'takenExt', -0.15, Infinity, '등패술');
+        u.hooks.damaged.push((src, info) => { if (info.normal && !src.dead && b.rand() < 0.25) b.addStatus(u, src, 'disarm', 1); });
+      } },
+    { id: 'yuseong', name: '유성추', type: 'active', rate: 35,
+      desc: '적 1명에게 무기 피해 130%, 40% 확률로 점혈(1합)',
+      cast: (b, u) => b.pickEnemies(u, 1).forEach(t => { b.damage(u, t, 'ext', 1.3, '유성추'); if (b.rand() < 0.4) b.addStatus(u, t, 'stun', 1); }) },
+    { id: 'juhwa', name: '주화입마', type: 'passive',
+      desc: '받는 피해 +10%, 매 합 시작 시 잃은 체력 비율만큼 주는 피해 증가 (최대 +40%)',
+      setup: (b, u) => {
+        b.addMod(u, 'taken', 0.1, Infinity, '주화입마 대가');
+        u.hooks.roundStart.push(() => b.addMod(u, 'dealt', 0.4 * (1 - u.hp / u.maxHp), Infinity, '주화입마'));
+      } },
+    { id: 'idok', name: '이독공독', type: 'active', rate: 40,
+      desc: '체력 비율이 가장 낮은 아군 회복 (계수 80%) + 적 1명 중독(2합, 매 합 내공 피해 40%)',
+      cast: (b, u) => {
+        b.heal(u, b.allies(u).sort((x, y) => x.hp / x.maxHp - y.hp / y.maxHp)[0], 0.8, '이독공독');
+        b.pickEnemies(u, 1).forEach(t => b.addStatus(u, t, 'poison', 2, { kind: 'int', coef: 0.4 }));
+      } },
+    { id: 'gujeol', name: '구절편', type: 'active', rate: 35,
+      desc: '적 2명에게 무기 피해 80%, 그중 1명 무장해제(1합)',
+      cast: (b, u) => {
+        const ts = b.pickEnemies(u, 2);
+        ts.forEach(t => b.damage(u, t, 'ext', 0.8, '구절편'));
+        if (ts.length) b.addStatus(u, ts[0], 'disarm', 1);
+      } },
+    { id: 'cheonmaryeong', name: '천마령', type: 'aura',
+      desc: '1~3합 동안 아군 전체 경공 +15%',
+      setup: (b, u) => b.allies(u).forEach(a => b.addMod(a, 'spd', 0.15, 3, '천마령')) },
+    { id: 'hopyo', name: '호표', type: 'passive',
+      desc: '아군 주장이 받는 피해의 25%를 대신 받고, 대신 받을 때 30% 확률로 반격 (무기 피해 80%). 자신이 주장이면 효과 없음',
+      setup: (b, u) => {
+        const leader = b.allies(u).find(a => a.pos === 0);
+        if (!leader || leader === u) return;
+        b.addStatus(u, leader, 'guard', CFG.rounds);
+        if (leader.status.guard && !leader.status.guard.by) Object.assign(leader.status.guard, { by: u, ratio: 0.25 });
+        u.hooks.guarded.push(src => { if (!src.dead && b.rand() < 0.3) b.damage(u, src, 'ext', 0.8, '호표', { counter: true }); });
+      } },
+    { id: 'jinwon', name: '진원창', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 110%, 1합 동안 체력 비율이 가장 낮은 아군 받는 피해 -15%',
+      cast: (b, u, t) => {
+        b.damage(u, t, 'ext', 1.1, '진원창');
+        const a = b.allies(u).sort((x, y) => x.hp / x.maxHp - y.hp / y.maxHp)[0];
+        if (a) b.addMod(a, 'taken', -0.15, 1, '진원창');
+      } },
+    { id: 'sain', name: '사인선사마', type: 'active', rate: 35,
+      desc: '적 주장에게 무기 피해 120% + 2합 동안 주는 피해 -15%',
+      cast: (b, u) => { const t = b.leaderTarget(u); if (t) { b.damage(u, t, 'ext', 1.2, '사인선사마'); b.addMod(t, 'dealt', -0.15, 2, '사인선사마'); } } },
+    { id: 'mumyeong', name: '무명검', type: 'aura',
+      desc: '준비 합에 적 1명을 표적으로 정해, 그 적에게 주는 피해 +25%',
+      setup: (b, u) => {
+        const [t] = b.pickEnemies(u, 1);
+        if (!t) return;
+        u.mark = { target: t, bonus: 0.25 };
+        b.log(`${b.tag(u)}의 무명검: ${b.tag(t)}를 표적으로 정함`);
+      } },
+    { id: 'gyeokgong', name: '격공점혈', type: 'active', rate: 35,
+      desc: '적 2명에게 각각 50% 확률로 점혈(1합)',
+      cast: (b, u) => b.pickEnemies(u, 2).forEach(t => { if (b.rand() < 0.5) b.addStatus(u, t, 'stun', 1); }) },
+    { id: 'sipmyeon', name: '십면매복', type: 'active', rate: 30,
+      desc: '적 전체에게 내공 피해 60%, 각각 25% 확률로 혼란(1합)',
+      cast: (b, u) => b.pickEnemies(u, 3).forEach(t => { b.damage(u, t, 'int', 0.6, '십면매복'); if (b.rand() < 0.25) b.addStatus(u, t, 'confuse', 1); }) },
+    { id: 'pojeong', name: '포정해우', type: 'chase', rate: 40,
+      desc: '평타 후 같은 적에게 무기 피해 120%, 대상 호신의 40%를 무시',
+      cast: (b, u, t) => b.damage(u, t, 'ext', 1.2, '포정해우', { pierce: 0.4 }) },
+    { id: 'sunsu', name: '순수추주', type: 'passive',
+      desc: '받은 무기 피해의 25%를 공격자에게 되돌림',
+      setup: (b, u) => u.hooks.damaged.push((src, info) => {
+        if (info.kind === 'ext' && src.side !== u.side && !src.dead) b.flatDamage(u, src, info.dmg * 0.25, '순수추주');
+      }) },
+    { id: 'sinnong', name: '신농백초', type: 'active', rate: 40,
+      desc: '체력 비율이 가장 낮은 아군의 상태이상 1개 해제 + 회복 (계수 100%)',
+      cast: (b, u) => {
+        const a = b.allies(u).sort((x, y) => x.hp / x.maxHp - y.hp / y.maxHp)[0];
+        b.cleanse(u, a, '신농백초');
+        b.heal(u, a, 1.0, '신농백초');
+      } },
   ];
   const SKILL = Object.fromEntries(SKILLS.map(s => [s.id, s]));
 
@@ -206,6 +432,57 @@
     { id: 'dokgo', name: '독고패', title: '낭인검귀', faction: '사파', hp: 3100, ext: 205, int: 110, def: 130, spd: 155, apt: 'SABCB', skill: 'sajung' },
     { id: 'baengni', name: '백리청', title: '의협', faction: '정파', hp: 3100, ext: 190, int: 130, def: 140, spd: 145, apt: 'ASBBA', skill: 'hyeolmaek' },
     { id: 'jegal', name: '제갈운', title: '신의', faction: '정파', hp: 2800, ext: 80, int: 190, def: 120, spd: 140, apt: 'ABASB', skill: 'hoechun' },
+    // 출시 무인 50명 (스탯은 역할별 임시값, 밸런스 때 시뮬레이터로 정함)
+    { id: 'jimyeong', name: '지명', title: '소림 지자배 승려', faction: '정파', hp: 3400, ext: 145, int: 105, def: 195, spd: 100, apt: 'BCSBA', skill: 'sorimgon' },
+    { id: 'wonsosam', name: '원소삼', title: '삼결 걸개', faction: '정파', hp: 3000, ext: 170, int: 140, def: 135, spd: 150, apt: 'CSBAB', skill: 'yeonhwarak' },
+    { id: 'danorang', name: '단오랑', title: '취권 여개', faction: '정파', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'ABCSB', skill: 'chwigwon' },
+    { id: 'mokunbi', name: '목운비', title: '곤륜신행', faction: '정파', hp: 2700, ext: 180, int: 115, def: 105, spd: 190, apt: 'CSBAB', skill: 'dapseol' },
+    { id: 'dojungak', name: '도중악', title: '공동철권', faction: '정파', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'BCSBA', skill: 'tongbae' },
+    { id: 'yeopcheong', name: '엽청', title: '점창쾌검', faction: '정파', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'SBABC', skill: 'sipgubong' },
+    { id: 'haunhak', name: '하운학', title: '청성검객', faction: '정파', hp: 2700, ext: 85, int: 200, def: 105, spd: 160, apt: 'ABCSB', skill: 'cheonsa' },
+    { id: 'seokhaerang', name: '석해랑', title: '해남검수', faction: '정파', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'ABCSB', skill: 'nodo' },
+    { id: 'hwangboyeol', name: '황보열', title: '황보세가 소가주', faction: '정파', hp: 3360, ext: 210, int: 110, def: 160, spd: 140, apt: 'SBABC', skill: 'dogeom' },
+    { id: 'akjinmyeong', name: '악진명', title: '악가창수', faction: '정파', hp: 3000, ext: 190, int: 115, def: 140, spd: 145, apt: 'SBABC', skill: 'yukhap' },
+    { id: 'eonseoyeon', name: '언서연', title: '언가권녀', faction: '정파', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'BCSBA', skill: 'bunggwon' },
+    { id: 'cheongyangja', name: '청양자', title: '전진도사', faction: '정파', hp: 3000, ext: 105, int: 180, def: 130, spd: 140, apt: 'SBABC', skill: 'chilseong' },
+    { id: 'yusocheong', name: '유소청', title: '형산검녀', faction: '정파', hp: 2900, ext: 165, int: 145, def: 130, spd: 155, apt: 'BABCS', skill: 'namak' },
+    { id: 'gwakjin', name: '곽진', title: '숭산검수', faction: '정파', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'BCSBA', skill: 'jungak' },
+    { id: 'wijagyeong', name: '위자경', title: '항산제자', faction: '정파', hp: 3600, ext: 155, int: 95, def: 205, spd: 90, apt: 'BCSBA', skill: 'bugak' },
+    { id: 'notaegyeong', name: '노태경', title: '태산권사', faction: '정파', hp: 3000, ext: 190, int: 115, def: 140, spd: 145, apt: 'BCSBA', skill: 'cheolsa' },
+    { id: 'jangbuun', name: '장부운', title: '모산도사', faction: '정파', hp: 2800, ext: 90, int: 195, def: 110, spd: 155, apt: 'ABCSB', skill: 'mosan' },
+    { id: 'maenggwan', name: '맹관', title: '검각수문검', faction: '정파', hp: 3600, ext: 155, int: 95, def: 205, spd: 90, apt: 'SBABC', skill: 'ilbu' },
+    { id: 'soyuk', name: '소육', title: '하오문 정보꾼', faction: '사파', hp: 2700, ext: 180, int: 115, def: 105, spd: 190, apt: 'CSBAB', skill: 'sujeon' },
+    { id: 'hongmae', name: '홍매', title: '기루 주인', faction: '사파', hp: 2800, ext: 90, int: 195, def: 110, spd: 155, apt: 'ABCSB', skill: 'mihon' },
+    { id: 'noesam', name: '뇌삼', title: '객잔 점소이', faction: '사파', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'CSBAB', skill: 'juwi' },
+    { id: 'udaeho', name: '우대호', title: '녹림 도부수', faction: '사파', hp: 3000, ext: 190, int: 115, def: 140, spd: 145, apt: 'BABCS', skill: 'sampan' },
+    { id: 'jinryeong', name: '진령', title: '녹림 궁수', faction: '사파', hp: 2800, ext: 185, int: 110, def: 110, spd: 185, apt: 'CSBAB', skill: 'yeonju' },
+    { id: 'isam', name: '이삼', title: '장강수귀', faction: '사파', hp: 3100, ext: 175, int: 135, def: 140, spd: 145, apt: 'ABCSB', skill: 'nangri' },
+    { id: 'suyeon', name: '수연', title: '장강비연', faction: '사파', hp: 2700, ext: 180, int: 115, def: 105, spd: 190, apt: 'SBABC', skill: 'biyeon' },
+    { id: 'gangil', name: '강일', title: '철노 수적', faction: '사파', hp: 3000, ext: 170, int: 140, def: 135, spd: 150, apt: 'CSBAB', skill: 'jegalno' },
+    { id: 'chilho', name: '칠호', title: '살막 칠호', faction: '사파', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'SBABC', skill: 'dogung' },
+    { id: 'heukjeop', name: '흑접', title: '살막 흑접', faction: '사파', hp: 2700, ext: 180, int: 115, def: 105, spd: 190, apt: 'ABCSB', skill: 'maehwa' },
+    { id: 'muyeong', name: '무영', title: '살막 무영', faction: '사파', hp: 2940, ext: 195, int: 115, def: 115, spd: 195, apt: 'SBABC', skill: 'jamyeong' },
+    { id: 'gowol', name: '고월', title: '월하낭인', faction: '사파', hp: 3200, ext: 200, int: 105, def: 150, spd: 135, apt: 'BABCS', skill: 'wolha' },
+    { id: 'jobaek', name: '조백', title: '현상 사냥꾼', faction: '사파', hp: 2900, ext: 165, int: 145, def: 130, spd: 155, apt: 'BCSBA', skill: 'poseung' },
+    { id: 'yongcheonho', name: '용천호', title: '청룡당 창수', faction: '마교', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'CSBAB', skill: 'changnyong' },
+    { id: 'cheongrin', name: '청린', title: '청룡당 쌍검녀', faction: '마교', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'CSBAB', skill: 'wonang' },
+    { id: 'baekcheolsan', name: '백철산', title: '백호당 도객', faction: '마교', hp: 3000, ext: 190, int: 115, def: 140, spd: 145, apt: 'SBABC', skill: 'maengho' },
+    { id: 'baeksogyo', name: '백소교', title: '백호당 조법녀', faction: '마교', hp: 2800, ext: 185, int: 110, def: 110, spd: 185, apt: 'SBABC', skill: 'hojo' },
+    { id: 'gugap', name: '구갑', title: '현무당 방패수', faction: '마교', hp: 3600, ext: 155, int: 95, def: 205, spd: 90, apt: 'BCSBA', skill: 'deungpae' },
+    { id: 'dunsan', name: '둔산', title: '현무당 철퇴수', faction: '마교', hp: 3400, ext: 145, int: 105, def: 195, spd: 100, apt: 'BCSBA', skill: 'yuseong' },
+    { id: 'gwaksam', name: '곽삼', title: '천마 광도', faction: '마교', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'BABCS', skill: 'juhwa' },
+    { id: 'yuhwa', name: '유화', title: '마교 약녀', faction: '마교', hp: 3000, ext: 105, int: 180, def: 130, spd: 140, apt: 'ABCSB', skill: 'idok' },
+    { id: 'yeonbi', name: '연비', title: '소마녀', faction: '마교', hp: 2900, ext: 165, int: 145, def: 130, spd: 155, apt: 'BABCS', skill: 'gujeol' },
+    { id: 'heukui', name: '흑의사자', title: '천마령 전령', faction: '마교', hp: 2900, ext: 100, int: 185, def: 125, spd: 145, apt: 'ABCSB', skill: 'cheonmaryeong' },
+    { id: 'jangwiwon', name: '장위원', title: '진원표국 표두', faction: '신비', hp: 3780, ext: 165, int: 100, def: 215, spd: 95, apt: 'BCSBA', skill: 'hopyo' },
+    { id: 'jeonsoho', name: '전소호', title: '표사', faction: '신비', hp: 2900, ext: 165, int: 145, def: 130, spd: 155, apt: 'CSBAB', skill: 'jinwon' },
+    { id: 'haryeong', name: '하령', title: '여표사', faction: '신비', hp: 2800, ext: 185, int: 110, def: 110, spd: 185, apt: 'CSBAB', skill: 'sain' },
+    { id: 'bokmyeon', name: '복면객', title: '정체불명의 복면객', faction: '신비', hp: 3200, ext: 200, int: 105, def: 150, spd: 135, apt: 'SBABC', skill: 'mumyeong' },
+    { id: 'hoeui', name: '회의집사', title: '회의 집사', faction: '신비', hp: 2700, ext: 85, int: 200, def: 105, spd: 160, apt: 'ABCSB', skill: 'gyeokgong' },
+    { id: 'eunmyeon', name: '은면여인', title: '은가면 여인', faction: '신비', hp: 2800, ext: 90, int: 195, def: 110, spd: 155, apt: 'BABCS', skill: 'sipmyeon' },
+    { id: 'wangdaega', name: '왕대가', title: '객잔 숙수', faction: '신비', hp: 3200, ext: 200, int: 105, def: 150, spd: 135, apt: 'BABCS', skill: 'pojeong' },
+    { id: 'nocho', name: '노초', title: '나루터 뱃사공', faction: '신비', hp: 3400, ext: 145, int: 105, def: 195, spd: 100, apt: 'ABCSB', skill: 'sunsu' },
+    { id: 'sana', name: '산아', title: '약초꾼 소녀', faction: '신비', hp: 2900, ext: 100, int: 185, def: 125, spd: 145, apt: 'CSBAB', skill: 'sinnong' },
   ];
   const UNIT = Object.fromEntries(UNITS.map(u => [u.id, u]));
 
@@ -268,7 +545,8 @@
           apt: d.apt[ei],
           skills: [d.skill, ...s.skills.filter(Boolean)].map(id => SKILL[id]),
           status: {}, mods: [], immune: new Set(), prep: null,
-          hooks: { roundStart: [], damaged: [], dealt: [] },
+          hooks: { roundStart: [], damaged: [], dealt: [], evaded: [], guarded: [] },
+          stacks: {}, mark: null,
           rec: { dealt: 0, healed: 0, taken: 0, procs: {}, bySkill: {} },
         };
         // 장비 특수효과는 전투 내내 걸린 효과로 둔다. 받는 피해 감소는 taken에 더한다.
@@ -293,9 +571,16 @@
       return pool[pool.length - 1];
     }
 
+    // 노릴 수 있는 적. 은신한 적은 빼고, 모두 은신했으면 전부.
+    targets(u) {
+      const foes = this.foes(u);
+      const seen = foes.filter(f => !f.status.stealth);
+      return seen.length ? seen : foes;
+    }
+
     // n명 고르기. 3 이상이면 적 전체. 혼란 상태면 단일 대상이 적·아군 중 무작위.
     pickEnemies(u, n) {
-      const foes = this.foes(u);
+      const foes = this.targets(u);
       if (n >= 3) return foes;
       let pool = u.status.confuse ? this.units.filter(x => !x.dead && x !== u) : foes;
       const out = [];
@@ -310,13 +595,19 @@
     // 적 주장을 노림. 혼란 상태면 무작위.
     leaderTarget(u) {
       if (u.status.confuse) return this.pickEnemies(u, 1)[0];
-      const foes = this.foes(u);
+      const foes = this.targets(u);
       return foes.find(f => f.pos === 0) || this.weightedPick(foes);
+    }
+
+    // 체력 비율이 가장 낮은 적. 같으면 앞자리. 혼란 상태면 무작위.
+    lowestHpFoe(u) {
+      if (u.status.confuse) return this.pickEnemies(u, 1)[0];
+      return this.targets(u).reduce((best, f) => !best || f.hp / f.maxHp < best.hp / best.maxHp ? f : best, null);
     }
 
     attackTarget(u) {
       if (u.status.confuse) return this.pickEnemies(u, 1)[0];
-      const foes = this.foes(u);
+      const foes = this.targets(u);
       const taunter = foes.find(f => f.status.taunt);
       return taunter || this.weightedPick(foes);
     }
@@ -325,6 +616,20 @@
     addMod(u, key, value, rounds, label) {
       u.mods = u.mods.filter(m => m.label !== label || m.key !== key); // 같은 출처는 갱신
       u.mods.push({ key, value, rounds, label, since: this.turnSeq });
+    }
+
+    // 같은 출처 효과를 max번까지 쌓는다. 쌓인 횟수를 돌려준다.
+    stack(u, label, max) {
+      u.stacks[label] = Math.min(max, (u.stacks[label] || 0) + 1);
+      return u.stacks[label];
+    }
+
+    // 상태이상 1개 해제 (청심결과 같은 순서)
+    cleanse(src, a, label) {
+      const k = DEBUFFS.find(k => a.status[k]);
+      if (!k) return;
+      delete a.status[k];
+      this.log(`${this.tag(src)}의 ${label}: ${this.tag(a)}의 ${STATUS_NAMES[k]} 해제`);
     }
 
     addStatus(src, dst, key, rounds, dot, reflected) {
@@ -346,9 +651,10 @@
     }
 
     // skill = 무공으로 주는 피해 (평타 아님). 장비의 무공 피해 증가가 붙는다.
-    rawDamage(src, dst, kind, coef, skill) {
+    // pierce = 방어(호신·내공)를 무시하는 비율
+    rawDamage(src, dst, kind, coef, skill, pierce = 0) {
       const atk = this.stat(src, kind === 'ext' ? 'ext' : 'int');
-      const dfn = this.stat(dst, kind === 'ext' ? 'def' : 'int');
+      const dfn = this.stat(dst, kind === 'ext' ? 'def' : 'int') * (1 - pierce);
       let dmg = (CFG.baseDmg + Math.max(0, atk - dfn) * CFG.statK) * coef;
       const eA = this.teams[src.side].element, eB = this.teams[dst.side].element;
       if (src.side !== dst.side) {
@@ -357,6 +663,7 @@
       }
       dmg *= 0.6 + 0.4 * src.hp / src.maxHp; // 체력 보정
       dmg *= Math.max(0, 1 + this.mod(src, 'dealt'));
+      if (src.mark && src.mark.target === dst) dmg *= 1 + src.mark.bonus; // 표적
       if (skill) dmg *= 1 + this.mod(src, 'skillDmg');
       dmg *= Math.max(0.1, 1 + this.mod(dst, 'taken') + this.mod(dst, kind === 'ext' ? 'takenExt' : 'takenInt'));
       return dmg;
@@ -366,9 +673,13 @@
       if (dst.dead || this.over) return 0;
       if (src.side !== dst.side) { // 회피: 지속 피해는 피하지 못함
         const evade = this.mod(dst, 'evade');
-        if (evade > 0 && this.rand() < evade) { this.log(`${this.tag(src)}의 ${label} → ${this.tag(dst)} 회피`); return 0; }
+        if (evade > 0 && this.rand() < evade) {
+          this.log(`${this.tag(src)}의 ${label} → ${this.tag(dst)} 회피`);
+          if (!opts.counter) dst.hooks.evaded.forEach(h => h(src));
+          return 0;
+        }
       }
-      let dmg = this.rawDamage(src, dst, kind, coef, label !== '평타') * (0.9 + 0.2 * this.rand());
+      let dmg = this.rawDamage(src, dst, kind, coef, label !== '평타', opts.pierce || 0) * (0.9 + 0.2 * this.rand());
       let crit = false;
       if (kind === 'ext' && this.rand() < this.mod(src, 'crit')) { dmg *= CFG.critMult + this.mod(src, 'critDmg'); crit = true; }
       dmg = Math.max(1, Math.round(dmg));
@@ -379,13 +690,30 @@
           dmg -= share;
           this.applyLoss(g.by, share, src, label);
           this.log(`${this.tag(g.by)}의 호위: ${this.tag(dst)} 대신 ${share} 피해 (남은 체력 ${g.by.hp})`);
+          if (!g.by.dead && !opts.counter) g.by.hooks.guarded.forEach(h => h(src));
         }
       }
       this.applyLoss(dst, dmg, src, label);
       this.log(`${this.tag(src)}의 ${label}${crit ? ' (치명타)' : ''} → ${this.tag(dst)} ${dmg} 피해 (${kind === 'ext' ? '무기' : '내공'}, 남은 체력 ${dst.hp})`);
-      if (!dst.dead && !opts.counter) dst.hooks.damaged.forEach(h => h(src, { normal: !!opts.normal, kind }));
+      if (!dst.dead && !opts.counter) dst.hooks.damaged.forEach(h => h(src, { normal: !!opts.normal, kind, dmg }));
       if (src.side !== dst.side && !src.dead) src.hooks.dealt.forEach(h => h(dmg, kind));
       return dmg;
+    }
+
+    // 정해진 양을 그대로 주는 피해 (회피·치명타·호위 없음). 받은 피해 되돌리기에 쓴다.
+    flatDamage(src, dst, amt, label) {
+      if (dst.dead || this.over) return;
+      amt = Math.max(1, Math.round(amt));
+      this.applyLoss(dst, amt, src, label);
+      this.log(`${this.tag(src)}의 ${label} → ${this.tag(dst)} ${amt} 피해 (되돌림, 남은 체력 ${dst.hp})`);
+    }
+
+    // 걸려 있는 지속 피해를 지금 한 번 더 입힌다.
+    burstDot(dst, key) {
+      const st = dst.status[key];
+      if (!st || dst.dead) return;
+      this.applyLoss(dst, st.tick, st.src, st.label);
+      this.log(`${this.tag(dst)}: ${STATUS_NAMES[key]} 터짐 ${st.tick} 피해 (남은 체력 ${dst.hp})`);
     }
 
     // 무공별 집계. '탈명연환 추가타'처럼 꾸밈말이 붙은 이름은 무공 이름으로 묶는다.

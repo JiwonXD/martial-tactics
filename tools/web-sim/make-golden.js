@@ -81,7 +81,7 @@ for (const m of matchups()) {
   for (let seed = 1; seed <= BATTLE_SEEDS; seed++) {
     const r = new S.Battle(m.a, m.b, { seed, log: true }).run();
     const text = logText(r.log);
-    for (const k of ['두전성이', '의 호위', '추가타', '사중구활', '혈맥상통', '면역', '반감', '준비가 끊김', '쓰러짐', '치명타', '되돌림', '청심결', '반탄경', '회피', '저항'])
+    for (const k of ['두전성이', '의 호위', '추가타', '사중구활', '혈맥상통', '면역', '반감', '준비가 끊김', '쓰러짐', '치명타', '되돌림', '청심결', '반탄경', '회피', '저항', '은신', '(되돌림', '터짐', '표적', '주위상', '호표', '취권'])
       if (text.includes(k)) seen[k] = (seen[k] || 0) + 1;
     battles.push({ seed, winner: r.winner, reason: r.reason, rounds: r.rounds, hp: r.units.map(u => u.hp), log: sha(text) });
   }
