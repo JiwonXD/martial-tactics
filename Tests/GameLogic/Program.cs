@@ -19,6 +19,8 @@ static class Program
         Check(g.Data.Units.Select(u => u.Id).Distinct().Count() == g.Data.Units.Count, "보유 무인 중복 없음");
         Check(draws.Count(r => r.New) == g.Data.Units.Count, "새 무인 수 = 보유 무인 수");
         Check(g.Data.Units.Sum(u => u.Spare) == draws.Count(r => !r.New), "중복 카드 수");
+        Check(draws.All(r => GameState.Stars(r.Unit) <= 5), "6성 절정은 뽑기에 안 나옴");
+        Check(GameState.Stars("gongjin") == 5 && GameState.Stars("cheongheo") == 6 && GameState.Stars("baek") == 3, "무인별 등급");
 
         // 승급: 카드 1장, 별 수만큼, 승급당 자유 스탯 10
         var u = g.Data.Units.OrderByDescending(x => x.Spare).First();
