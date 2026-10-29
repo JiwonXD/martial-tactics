@@ -60,9 +60,14 @@ namespace MartialTactics.Battle
         public readonly HashSet<StatusKind> Immune = new HashSet<StatusKind>();
         public SkillDef Prep;
         public bool Reflect; // 두전성이
+        public Unit Mark;        // 표적 (무명검)
+        public double MarkBonus; // 표적에게 주는 피해 증가
+        public readonly Dictionary<string, int> Stacks = new Dictionary<string, int>(); // 쌓이는 효과의 횟수
         public readonly List<Action> RoundStart = new List<Action>();
-        public readonly List<Action<Unit, bool, DamageKind>> Damaged = new List<Action<Unit, bool, DamageKind>>(); // (공격자, 평타 여부, 피해 종류)
+        public readonly List<Action<Unit, bool, DamageKind, int>> Damaged = new List<Action<Unit, bool, DamageKind, int>>(); // (공격자, 평타 여부, 피해 종류, 피해량)
         public readonly List<Action<int, DamageKind>> Dealt = new List<Action<int, DamageKind>>();
+        public readonly List<Action<Unit>> Evaded = new List<Action<Unit>>();  // 회피했을 때 (공격자)
+        public readonly List<Action<Unit>> Guarded = new List<Action<Unit>>(); // 호위로 대신 맞았을 때 (공격자)
         public readonly UnitRecord Rec = new UnitRecord();
 
         public bool Has(StatusKind k) => Status.ContainsKey(k);
@@ -202,7 +207,7 @@ namespace MartialTactics.Battle
 
         static double HpRatio(Unit u) => (double)u.Hp / u.MaxHp;
 
-        Unit WeightedPick(List<Unit> pool)
+        public Unit WeightedPick(List<Unit> pool)
         {
             int total = 0;
             foreach (var u in pool) total += BattleRules.TargetWeight[u.Pos];
@@ -211,10 +216,18 @@ namespace MartialTactics.Battle
             return pool.Count > 0 ? pool[pool.Count - 1] : null;
         }
 
+        /// <summary>노릴 수 있는 적. 은신한 적은 빼고, 모두 은신했으면 전부.</summary>
+        public List<Unit> Targets(Unit u)
+        {
+            var foes = Foes(u);
+            var seen = foes.Where(f => !f.Has(StatusKind.Stealth)).ToList();
+            return seen.Count > 0 ? seen : foes;
+        }
+
         /// <summary>n명 고르기. 3 이상이면 적 전체. 혼란 상태면 단일 대상이 적·아군 중 무작위.</summary>
         public List<Unit> PickEnemies(Unit u, int n)
         {
-            var foes = Foes(u);
+            var foes = Targets(u);
             if (n >= 3) return foes;
             var pool = u.Has(StatusKind.Confuse) ? Units.Where(x => !x.Dead && x != u).ToList() : foes;
             var output = new List<Unit>();
@@ -231,14 +244,23 @@ namespace MartialTactics.Battle
         public Unit LeaderTarget(Unit u)
         {
             if (u.Has(StatusKind.Confuse)) return PickEnemies(u, 1).FirstOrDefault();
-            var foes = Foes(u);
+            var foes = Targets(u);
             return foes.FirstOrDefault(f => f.Pos == 0) ?? WeightedPick(foes);
+        }
+
+        /// <summary>체력 비율이 가장 낮은 적. 같으면 앞자리. 혼란 상태면 무작위.</summary>
+        public Unit LowestHpFoe(Unit u)
+        {
+            if (u.Has(StatusKind.Confuse)) return PickEnemies(u, 1).FirstOrDefault();
+            Unit best = null;
+            foreach (var f in Targets(u)) if (best == null || HpRatio(f) < HpRatio(best)) best = f;
+            return best;
         }
 
         Unit AttackTarget(Unit u)
         {
             if (u.Has(StatusKind.Confuse)) return PickEnemies(u, 1).FirstOrDefault();
-            var foes = Foes(u);
+            var foes = Targets(u);
             return foes.FirstOrDefault(f => f.Has(StatusKind.Taunt)) ?? WeightedPick(foes);
         }
 
@@ -255,6 +277,22 @@ namespace MartialTactics.Battle
         {
             u.Mods.RemoveAll(m => m.Label == label && m.Key == key); // 같은 출처는 갱신
             u.Mods.Add(new Mod { Key = key, Value = value, Rounds = rounds, Label = label, Since = turnSeq });
+        }
+
+        /// <summary>같은 출처 효과를 max번까지 쌓는다. 쌓인 횟수를 돌려준다.</summary>
+        public int Stack(Unit u, string label, int max)
+        {
+            u.Stacks.TryGetValue(label, out int n);
+            return u.Stacks[label] = Math.Min(max, n + 1);
+        }
+
+        /// <summary>상태이상 1개 해제 (청심결과 같은 순서)</summary>
+        public void Cleanse(Unit src, Unit a, string label)
+        {
+            if (!BattleRules.Debuffs.Any(a.Has)) return;
+            var k = BattleRules.Debuffs.First(a.Has);
+            a.Status.Remove(k);
+            Log($"{Tag(src)}의 {label}: {Tag(a)}의 {BattleRules.StatusNames[k]} 해제");
         }
 
         public void AddStatus(Unit src, Unit dst, StatusKind key, int rounds, Dot dot = null, bool reflected = false)
@@ -289,11 +327,11 @@ namespace MartialTactics.Battle
             }
         }
 
-        // skill = 무공으로 주는 피해 (평타 아님). 장비의 무공 피해 증가가 붙는다.
-        double RawDamage(Unit src, Unit dst, DamageKind kind, double coef, bool skill)
+        // skill = 무공으로 주는 피해 (평타 아님). 장비의 무공 피해 증가가 붙는다. pierce = 방어(호신·내공)를 무시하는 비율
+        double RawDamage(Unit src, Unit dst, DamageKind kind, double coef, bool skill, double pierce = 0)
         {
             double atk = Stat(src, kind == DamageKind.Ext ? ModKey.Ext : ModKey.Int);
-            double dfn = Stat(dst, kind == DamageKind.Ext ? ModKey.Def : ModKey.Int);
+            double dfn = Stat(dst, kind == DamageKind.Ext ? ModKey.Def : ModKey.Int) * (1 - pierce);
             double dmg = (Config.BaseDmg + Math.Max(0, atk - dfn) * Config.StatK) * coef;
             string eA = teams[(int)src.Side].Element, eB = teams[(int)dst.Side].Element;
             if (src.Side != dst.Side)
@@ -303,21 +341,27 @@ namespace MartialTactics.Battle
             }
             dmg *= 0.6 + 0.4 * src.Hp / src.MaxHp; // 체력 보정
             dmg *= Math.Max(0, 1 + Mod(src, ModKey.Dealt));
+            if (src.Mark != null && src.Mark == dst) dmg *= 1 + src.MarkBonus; // 표적
             if (skill) dmg *= 1 + Mod(src, ModKey.SkillDmg);
             dmg *= Math.Max(0.1, 1 + Mod(dst, ModKey.Taken) + Mod(dst, kind == DamageKind.Ext ? ModKey.TakenExt : ModKey.TakenInt));
             return dmg;
         }
 
-        public int Damage(Unit src, Unit dst, DamageKind kind, double coef, string label, bool normal = false, bool counter = false)
+        public int Damage(Unit src, Unit dst, DamageKind kind, double coef, string label, bool normal = false, bool counter = false, double pierce = 0)
         {
             if (dst.Dead || Over) return 0;
             if (src.Side != dst.Side)
             {
                 // 회피: 지속 피해는 피하지 못함
                 double evade = Mod(dst, ModKey.Evade);
-                if (evade > 0 && Rand() < evade) { Log($"{Tag(src)}의 {label} → {Tag(dst)} 회피"); return 0; }
+                if (evade > 0 && Rand() < evade)
+                {
+                    Log($"{Tag(src)}의 {label} → {Tag(dst)} 회피");
+                    if (!counter) foreach (var h in dst.Evaded.ToList()) h(src);
+                    return 0;
+                }
             }
-            double raw = RawDamage(src, dst, kind, coef, label != "평타") * (0.9 + 0.2 * Rand());
+            double raw = RawDamage(src, dst, kind, coef, label != "평타", pierce) * (0.9 + 0.2 * Rand());
             bool crit = false;
             if (kind == DamageKind.Ext && Rand() < Mod(src, ModKey.Crit)) { raw *= Config.CritMult + Mod(src, ModKey.CritDmg); crit = true; }
             int dmg = Math.Max(1, RoundJs(raw));
@@ -330,13 +374,31 @@ namespace MartialTactics.Battle
                     dmg -= share;
                     ApplyLoss(g.By, share, src, label);
                     Log($"{Tag(g.By)}의 호위: {Tag(dst)} 대신 {share} 피해 (남은 체력 {g.By.Hp})");
+                    if (!g.By.Dead && !counter) foreach (var h in g.By.Guarded.ToList()) h(src);
                 }
             }
             ApplyLoss(dst, dmg, src, label);
             Log($"{Tag(src)}의 {label}{(crit ? " (치명타)" : "")} → {Tag(dst)} {dmg} 피해 ({(kind == DamageKind.Ext ? "무기" : "내공")}, 남은 체력 {dst.Hp})");
-            if (!dst.Dead && !counter) foreach (var h in dst.Damaged) h(src, normal, kind);
-            if (src.Side != dst.Side && !src.Dead) foreach (var h in src.Dealt) h(dmg, kind);
+            if (!dst.Dead && !counter) foreach (var h in dst.Damaged.ToList()) h(src, normal, kind, dmg);
+            if (src.Side != dst.Side && !src.Dead) foreach (var h in src.Dealt.ToList()) h(dmg, kind);
             return dmg;
+        }
+
+        /// <summary>정해진 양을 그대로 주는 피해 (회피·치명타·호위 없음). 받은 피해 되돌리기에 쓴다.</summary>
+        public void FlatDamage(Unit src, Unit dst, double amt, string label)
+        {
+            if (dst.Dead || Over) return;
+            int dmg = Math.Max(1, RoundJs(amt));
+            ApplyLoss(dst, dmg, src, label);
+            Log($"{Tag(src)}의 {label} → {Tag(dst)} {dmg} 피해 (되돌림, 남은 체력 {dst.Hp})");
+        }
+
+        /// <summary>걸려 있는 지속 피해를 지금 한 번 더 입힌다.</summary>
+        public void BurstDot(Unit dst, StatusKind key)
+        {
+            if (!dst.Status.TryGetValue(key, out var st) || dst.Dead) return;
+            ApplyLoss(dst, st.Tick, st.Src, st.Label);
+            Log($"{Tag(dst)}: {BattleRules.StatusNames[key]} 터짐 {st.Tick} 피해 (남은 체력 {dst.Hp})");
         }
 
         // 무공별 집계. '탈명연환 추가타'처럼 꾸밈말이 붙은 이름은 무공 이름으로 묶는다.

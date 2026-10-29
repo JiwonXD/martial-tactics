@@ -172,7 +172,7 @@ namespace MartialTactics.Battle
                 } },
             new SkillDef { Id = "bantan", Name = "반탄경", Type = SkillType.Passive,
                 Desc = "평타에 맞으면 30% 확률로 반격 (무기 피해 80%)",
-                Setup = (b, u) => u.Damaged.Add((src, normal, kind) =>
+                Setup = (b, u) => u.Damaged.Add((src, normal, kind, dmg) =>
                 {
                     if (normal && !src.Dead && b.Rand() < 0.3) b.Damage(u, src, DamageKind.Ext, 0.8, "반탄경", counter: true);
                 }) },
@@ -237,6 +237,267 @@ namespace MartialTactics.Battle
             new SkillDef { Id = "gwangpung", Name = "광풍쾌검", Type = SkillType.Passive,
                 Desc = "무기 피해 치명타 확률 +25% (치명타 시 1.5배)",
                 Setup = (b, u) => b.AddMod(u, ModKey.Crit, 0.25, Inf, "광풍쾌검") },
+            // ---- 출시 무인 50명 무공 (수치는 임시, 밸런스 때 시뮬레이터로 정함) ----
+            new SkillDef { Id = "sorimgon", Name = "소림곤법", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 130%, 2합 동안 자신이 받는 무기 피해 -15%",
+                Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 1.3, "소림곤법"); b.AddMod(u, ModKey.TakenExt, -0.15, 2, "소림곤법"); } },
+            new SkillDef { Id = "yeonhwarak", Name = "연화락", Type = SkillType.Active, Rate = 35,
+                Desc = "적 2명에게 무기 피해 80%, 2합 동안 그 적들이 받는 피해 +15%",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 2)) { b.Damage(u, t, DamageKind.Ext, 0.8, "연화락"); b.AddMod(t, ModKey.Taken, 0.15, 2, "연화락"); } } },
+            new SkillDef { Id = "chwigwon", Name = "취권", Type = SkillType.Passive,
+                Desc = "회피 +20%, 회피하면 50% 확률로 반격 (무기 피해 80%)",
+                Setup = (b, u) =>
+                {
+                    b.AddMod(u, ModKey.Evade, 0.2, Inf, "취권");
+                    u.Evaded.Add(src => { if (!src.Dead && b.Rand() < 0.5) b.Damage(u, src, DamageKind.Ext, 0.8, "취권", counter: true); });
+                } },
+            new SkillDef { Id = "dapseol", Name = "답설무흔", Type = SkillType.Aura,
+                Desc = "1~3합 동안 자신 경공 +20%, 회피 +15%",
+                Setup = (b, u) => { b.AddMod(u, ModKey.Spd, 0.2, 3, "답설무흔"); b.AddMod(u, ModKey.Evade, 0.15, 3, "답설무흔"); } },
+            new SkillDef { Id = "tongbae", Name = "통배권", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 120%, 2합 동안 대상 호신 -20%",
+                Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 1.2, "통배권"); b.AddMod(t, ModKey.Def, -0.2, 2, "통배권"); } },
+            new SkillDef { Id = "sipgubong", Name = "십구봉검", Type = SkillType.Chase, Rate = 35,
+                Desc = "평타 후 같은 적에게 무기 피해 80% 2회, 이 공격의 치명타 확률 +20%",
+                Cast = (b, u, t) =>
+                {
+                    b.AddMod(u, ModKey.Crit, 0.2, Inf, "십구봉검");
+                    b.Damage(u, t, DamageKind.Ext, 0.8, "십구봉검");
+                    b.Damage(u, t, DamageKind.Ext, 0.8, "십구봉검");
+                    u.Mods.RemoveAll(m => m.Label == "십구봉검");
+                } },
+            new SkillDef { Id = "cheonsa", Name = "천사검", Type = SkillType.Active, Rate = 35,
+                Desc = "적 1명에게 내공 피해 140%, 자신에게 걸린 상태이상 1개 해제",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 1)) b.Damage(u, t, DamageKind.Int, 1.4, "천사검"); b.Cleanse(u, u, "천사검"); } },
+            new SkillDef { Id = "nodo", Name = "노도검", Type = SkillType.Active, Rate = 30,
+                Desc = "적 전체에게 무기 피해 70%",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 3)) b.Damage(u, t, DamageKind.Ext, 0.7, "노도검"); } },
+            new SkillDef { Id = "dogeom", Name = "도검쌍행", Type = SkillType.Active, Rate = 35,
+                Desc = "적 2명에게 무기 피해 90%, 자신 외공 +8% (3번까지 쌓임)",
+                Cast = (b, u, _) =>
+                {
+                    foreach (var t in b.PickEnemies(u, 2)) b.Damage(u, t, DamageKind.Ext, 0.9, "도검쌍행");
+                    b.AddMod(u, ModKey.Ext, 0.08 * b.Stack(u, "도검쌍행", 3), Inf, "도검쌍행");
+                } },
+            new SkillDef { Id = "yukhap", Name = "육합대창", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 130%, 대상이 주장이면 180%",
+                Cast = (b, u, t) => b.Damage(u, t, DamageKind.Ext, t.Pos == 0 ? 1.8 : 1.3, "육합대창") },
+            new SkillDef { Id = "bunggwon", Name = "붕권", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 120%, 대상이 내상 상태면 180%",
+                Cast = (b, u, t) => b.Damage(u, t, DamageKind.Ext, t.Has(StatusKind.Injury) ? 1.8 : 1.2, "붕권") },
+            new SkillDef { Id = "chilseong", Name = "칠성검", Type = SkillType.Aura,
+                Desc = "1~3합 동안 아군 전체 받는 피해 -12%",
+                Setup = (b, u) => { foreach (var a in b.Allies(u)) b.AddMod(a, ModKey.Taken, -0.12, 3, "칠성검"); } },
+            new SkillDef { Id = "namak", Name = "남악검", Type = SkillType.Active, Rate = 35,
+                Desc = "적 1명에게 무기 피해 130% + 출혈(2합)",
+                Cast = (b, u, _) =>
+                {
+                    foreach (var t in b.PickEnemies(u, 1))
+                    {
+                        b.Damage(u, t, DamageKind.Ext, 1.3, "남악검");
+                        b.AddStatus(u, t, StatusKind.Bleed, 2, new Dot(DamageKind.Ext, 0.4));
+                    }
+                } },
+            new SkillDef { Id = "jungak", Name = "중악검", Type = SkillType.Active, Rate = 35, Prep = true,
+                Desc = "1합 기를 모은 뒤 적 2명에게 무기 피해 160%",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 2)) b.Damage(u, t, DamageKind.Ext, 1.6, "중악검"); } },
+            new SkillDef { Id = "bugak", Name = "북악검", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 110%, 자신 호신 +6% (4번까지 쌓임)",
+                Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 1.1, "북악검"); b.AddMod(u, ModKey.Def, 0.06 * b.Stack(u, "북악검", 4), Inf, "북악검"); } },
+            new SkillDef { Id = "cheolsa", Name = "철사장", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 120% + 내상(2합)",
+                Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 1.2, "철사장"); b.AddStatus(u, t, StatusKind.Injury, 2); } },
+            new SkillDef { Id = "mosan", Name = "모산부록", Type = SkillType.Active, Rate = 30,
+                Desc = "적 1명에게 내공 피해 100% + 혼란(1합)",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 1)) { b.Damage(u, t, DamageKind.Int, 1.0, "모산부록"); b.AddStatus(u, t, StatusKind.Confuse, 1); } } },
+            new SkillDef { Id = "ilbu", Name = "일부당관", Type = SkillType.Aura,
+                Desc = "1~2합 동안 자신에게 도발, 도발 중 평타에 맞으면 30% 확률로 반격 (무기 피해 70%)",
+                Setup = (b, u) =>
+                {
+                    b.AddStatus(u, u, StatusKind.Taunt, 2);
+                    u.Damaged.Add((src, normal, kind, dmg) =>
+                    {
+                        if (normal && u.Has(StatusKind.Taunt) && !src.Dead && b.Rand() < 0.3) b.Damage(u, src, DamageKind.Ext, 0.7, "일부당관", counter: true);
+                    });
+                } },
+            new SkillDef { Id = "sujeon", Name = "수전", Type = SkillType.Active, Rate = 35,
+                Desc = "적 1명에게 무기 피해 100% + 봉인(1합)",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 1)) { b.Damage(u, t, DamageKind.Ext, 1.0, "수전"); b.AddStatus(u, t, StatusKind.Silence, 1); } } },
+            new SkillDef { Id = "mihon", Name = "미혼향", Type = SkillType.Active, Rate = 35,
+                Desc = "적 2명에게 중독(3합, 매 합 내공 피해 40%), 이미 중독된 적은 혼란(1합)",
+                Cast = (b, u, _) =>
+                {
+                    foreach (var t in b.PickEnemies(u, 2))
+                    {
+                        if (t.Has(StatusKind.Poison)) b.AddStatus(u, t, StatusKind.Confuse, 1);
+                        else b.AddStatus(u, t, StatusKind.Poison, 3, new Dot(DamageKind.Int, 0.4));
+                    }
+                } },
+            new SkillDef { Id = "juwi", Name = "주위상", Type = SkillType.Passive,
+                Desc = "체력이 40% 아래로 처음 떨어지면 2합 동안 회피 +40%",
+                Setup = (b, u) => u.Damaged.Add((src, normal, kind, dmg) =>
+                {
+                    if (u.Stacks.ContainsKey("주위상") || (double)u.Hp / u.MaxHp >= 0.4) return;
+                    b.Stack(u, "주위상", 1);
+                    b.AddMod(u, ModKey.Evade, 0.4, 2, "주위상");
+                    b.Log($"{b.Tag(u)}의 주위상: 2합 동안 회피 +40%");
+                }) },
+            new SkillDef { Id = "sampan", Name = "삼판부", Type = SkillType.Active, Rate = 35,
+                Desc = "적 1명에게 무기 피해, 1~3번째 발동은 180%, 그 뒤엔 80%",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 1)) b.Damage(u, t, DamageKind.Ext, u.Rec.Procs["sampan"] <= 3 ? 1.8 : 0.8, "삼판부"); } },
+            new SkillDef { Id = "yeonju", Name = "연주전", Type = SkillType.Active, Rate = 35,
+                Desc = "무작위 적에게 3회 무기 피해 60%",
+                Cast = (b, u, _) => { for (int i = 0; i < 3; i++) foreach (var t in b.PickEnemies(u, 1)) b.Damage(u, t, DamageKind.Ext, 0.6, "연주전"); } },
+            new SkillDef { Id = "nangri", Name = "낭리백조", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 110%, 2합 동안 대상 경공 -20%",
+                Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 1.1, "낭리백조"); b.AddMod(t, ModKey.Spd, -0.2, 2, "낭리백조"); } },
+            new SkillDef { Id = "biyeon", Name = "비연도", Type = SkillType.Aura,
+                Desc = "1합 시작 때 무작위 적 2명에게 무기 피해 60%, 1~3합 동안 자신 경공 +20%",
+                Setup = (b, u) =>
+                {
+                    b.AddMod(u, ModKey.Spd, 0.2, 3, "비연도");
+                    u.RoundStart.Add(() => { if (b.Round == 1) foreach (var t in b.PickEnemies(u, 2)) b.Damage(u, t, DamageKind.Ext, 0.6, "비연도"); });
+                } },
+            new SkillDef { Id = "jegalno", Name = "제갈노", Type = SkillType.Active, Rate = 35,
+                Desc = "적 1명에게 3회 무기 피해 50%",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 1)) for (int i = 0; i < 3; i++) b.Damage(u, t, DamageKind.Ext, 0.5, "제갈노"); } },
+            new SkillDef { Id = "dogung", Name = "도궁비현", Type = SkillType.Active, Rate = 35,
+                Desc = "체력 비율이 가장 낮은 적 1명에게 무기 피해 160%",
+                Cast = (b, u, _) => { var t = b.LowestHpFoe(u); if (t != null) b.Damage(u, t, DamageKind.Ext, 1.6, "도궁비현"); } },
+            new SkillDef { Id = "maehwa", Name = "매화침", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 중독(3합, 매 합 내공 피해 40%), 이미 중독이면 중독 피해가 바로 한 번 터짐",
+                Cast = (b, u, t) =>
+                {
+                    if (t.Has(StatusKind.Poison)) b.BurstDot(t, StatusKind.Poison);
+                    else b.AddStatus(u, t, StatusKind.Poison, 3, new Dot(DamageKind.Int, 0.4));
+                } },
+            new SkillDef { Id = "jamyeong", Name = "잠영보", Type = SkillType.Aura,
+                Desc = "1~2합 동안 은신 (적이 노리지 못함), 처음 주는 피해 +30%",
+                Setup = (b, u) =>
+                {
+                    b.AddStatus(u, u, StatusKind.Stealth, 2);
+                    b.AddMod(u, ModKey.Dealt, 0.3, Inf, "잠영보");
+                    u.Dealt.Add((dmg, kind) => u.Mods.RemoveAll(m => m.Label == "잠영보"));
+                } },
+            new SkillDef { Id = "wolha", Name = "월하독작", Type = SkillType.Passive,
+                Desc = "매 합 시작 시 쓰러진 아군 1명마다 자신 주는 피해 +15%",
+                Setup = (b, u) => u.RoundStart.Add(() =>
+                {
+                    int down = b.Units.Count(a => a.Side == u.Side && a.Dead);
+                    if (down > 0) b.AddMod(u, ModKey.Dealt, 0.15 * down, Inf, "월하독작");
+                }) },
+            new SkillDef { Id = "poseung", Name = "포승술", Type = SkillType.Chase, Rate = 35,
+                Desc = "평타 후 같은 적 무장해제(1합) + 2합 동안 경공 -20%",
+                Cast = (b, u, t) => { b.AddStatus(u, t, StatusKind.Disarm, 1); b.AddMod(t, ModKey.Spd, -0.2, 2, "포승술"); } },
+            new SkillDef { Id = "changnyong", Name = "창룡출해", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 110%, 다른 적 1명에게도 60%",
+                Cast = (b, u, t) =>
+                {
+                    b.Damage(u, t, DamageKind.Ext, 1.1, "창룡출해");
+                    var others = b.Targets(u).Where(x => x != t).ToList();
+                    if (others.Count > 0) b.Damage(u, b.WeightedPick(others), DamageKind.Ext, 0.6, "창룡출해");
+                } },
+            new SkillDef { Id = "wonang", Name = "원앙검", Type = SkillType.Active, Rate = 35,
+                Desc = "적 2명에게 무기 피해 100%",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 2)) b.Damage(u, t, DamageKind.Ext, 1.0, "원앙검"); } },
+            new SkillDef { Id = "maengho", Name = "맹호하산", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 110%, 대상 체력 비율이 70% 이상이면 170%",
+                Cast = (b, u, t) => b.Damage(u, t, DamageKind.Ext, (double)t.Hp / t.MaxHp >= 0.7 ? 1.7 : 1.1, "맹호하산") },
+            new SkillDef { Id = "hojo", Name = "호조수", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 100% + 출혈(2합)",
+                Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 1.0, "호조수"); b.AddStatus(u, t, StatusKind.Bleed, 2, new Dot(DamageKind.Ext, 0.4)); } },
+            new SkillDef { Id = "deungpae", Name = "등패술", Type = SkillType.Passive,
+                Desc = "받는 무기 피해 -15%, 평타에 맞으면 25% 확률로 공격자 무장해제(1합)",
+                Setup = (b, u) =>
+                {
+                    b.AddMod(u, ModKey.TakenExt, -0.15, Inf, "등패술");
+                    u.Damaged.Add((src, normal, kind, dmg) => { if (normal && !src.Dead && b.Rand() < 0.25) b.AddStatus(u, src, StatusKind.Disarm, 1); });
+                } },
+            new SkillDef { Id = "yuseong", Name = "유성추", Type = SkillType.Active, Rate = 35,
+                Desc = "적 1명에게 무기 피해 130%, 40% 확률로 점혈(1합)",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 1)) { b.Damage(u, t, DamageKind.Ext, 1.3, "유성추"); if (b.Rand() < 0.4) b.AddStatus(u, t, StatusKind.Stun, 1); } } },
+            new SkillDef { Id = "juhwa", Name = "주화입마", Type = SkillType.Passive,
+                Desc = "받는 피해 +10%, 매 합 시작 시 잃은 체력 비율만큼 주는 피해 증가 (최대 +40%)",
+                Setup = (b, u) =>
+                {
+                    b.AddMod(u, ModKey.Taken, 0.1, Inf, "주화입마 대가");
+                    u.RoundStart.Add(() => b.AddMod(u, ModKey.Dealt, 0.4 * (1 - (double)u.Hp / u.MaxHp), Inf, "주화입마"));
+                } },
+            new SkillDef { Id = "idok", Name = "이독공독", Type = SkillType.Active, Rate = 40,
+                Desc = "체력 비율이 가장 낮은 아군 회복 (계수 80%) + 적 1명 중독(2합, 매 합 내공 피해 40%)",
+                Cast = (b, u, _) =>
+                {
+                    b.Heal(u, b.LowestHpAlly(u), 0.8, "이독공독");
+                    foreach (var t in b.PickEnemies(u, 1)) b.AddStatus(u, t, StatusKind.Poison, 2, new Dot(DamageKind.Int, 0.4));
+                } },
+            new SkillDef { Id = "gujeol", Name = "구절편", Type = SkillType.Active, Rate = 35,
+                Desc = "적 2명에게 무기 피해 80%, 그중 1명 무장해제(1합)",
+                Cast = (b, u, _) =>
+                {
+                    var ts = b.PickEnemies(u, 2);
+                    foreach (var t in ts) b.Damage(u, t, DamageKind.Ext, 0.8, "구절편");
+                    if (ts.Count > 0) b.AddStatus(u, ts[0], StatusKind.Disarm, 1);
+                } },
+            new SkillDef { Id = "cheonmaryeong", Name = "천마령", Type = SkillType.Aura,
+                Desc = "1~3합 동안 아군 전체 경공 +15%",
+                Setup = (b, u) => { foreach (var a in b.Allies(u)) b.AddMod(a, ModKey.Spd, 0.15, 3, "천마령"); } },
+            new SkillDef { Id = "hopyo", Name = "호표", Type = SkillType.Passive,
+                Desc = "아군 주장이 받는 피해의 25%를 대신 받고, 대신 받을 때 30% 확률로 반격 (무기 피해 80%). 자신이 주장이면 효과 없음",
+                Setup = (b, u) =>
+                {
+                    var leader = b.Allies(u).FirstOrDefault(a => a.Pos == 0);
+                    if (leader == null || leader == u) return;
+                    b.AddStatus(u, leader, StatusKind.Guard, b.Config.Rounds);
+                    if (leader.Status.TryGetValue(StatusKind.Guard, out var g) && g.By == null) { g.By = u; g.Ratio = 0.25; }
+                    u.Guarded.Add(src => { if (!src.Dead && b.Rand() < 0.3) b.Damage(u, src, DamageKind.Ext, 0.8, "호표", counter: true); });
+                } },
+            new SkillDef { Id = "jinwon", Name = "진원창", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 110%, 1합 동안 체력 비율이 가장 낮은 아군 받는 피해 -15%",
+                Cast = (b, u, t) =>
+                {
+                    b.Damage(u, t, DamageKind.Ext, 1.1, "진원창");
+                    var a = b.LowestHpAlly(u);
+                    if (a != null) b.AddMod(a, ModKey.Taken, -0.15, 1, "진원창");
+                } },
+            new SkillDef { Id = "sain", Name = "사인선사마", Type = SkillType.Active, Rate = 35,
+                Desc = "적 주장에게 무기 피해 120% + 2합 동안 주는 피해 -15%",
+                Cast = (b, u, _) =>
+                {
+                    var t = b.LeaderTarget(u);
+                    if (t != null) { b.Damage(u, t, DamageKind.Ext, 1.2, "사인선사마"); b.AddMod(t, ModKey.Dealt, -0.15, 2, "사인선사마"); }
+                } },
+            new SkillDef { Id = "mumyeong", Name = "무명검", Type = SkillType.Aura,
+                Desc = "준비 합에 적 1명을 표적으로 정해, 그 적에게 주는 피해 +25%",
+                Setup = (b, u) =>
+                {
+                    var t = b.PickEnemies(u, 1).FirstOrDefault();
+                    if (t == null) return;
+                    u.Mark = t; u.MarkBonus = 0.25;
+                    b.Log($"{b.Tag(u)}의 무명검: {b.Tag(t)}를 표적으로 정함");
+                } },
+            new SkillDef { Id = "gyeokgong", Name = "격공점혈", Type = SkillType.Active, Rate = 35,
+                Desc = "적 2명에게 각각 50% 확률로 점혈(1합)",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 2)) if (b.Rand() < 0.5) b.AddStatus(u, t, StatusKind.Stun, 1); } },
+            new SkillDef { Id = "sipmyeon", Name = "십면매복", Type = SkillType.Active, Rate = 30,
+                Desc = "적 전체에게 내공 피해 60%, 각각 25% 확률로 혼란(1합)",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 3)) { b.Damage(u, t, DamageKind.Int, 0.6, "십면매복"); if (b.Rand() < 0.25) b.AddStatus(u, t, StatusKind.Confuse, 1); } } },
+            new SkillDef { Id = "pojeong", Name = "포정해우", Type = SkillType.Chase, Rate = 40,
+                Desc = "평타 후 같은 적에게 무기 피해 120%, 대상 호신의 40%를 무시",
+                Cast = (b, u, t) => b.Damage(u, t, DamageKind.Ext, 1.2, "포정해우", pierce: 0.4) },
+            new SkillDef { Id = "sunsu", Name = "순수추주", Type = SkillType.Passive,
+                Desc = "받은 무기 피해의 25%를 공격자에게 되돌림",
+                Setup = (b, u) => u.Damaged.Add((src, normal, kind, dmg) =>
+                {
+                    if (kind == DamageKind.Ext && src.Side != u.Side && !src.Dead) b.FlatDamage(u, src, dmg * 0.25, "순수추주");
+                }) },
+            new SkillDef { Id = "sinnong", Name = "신농백초", Type = SkillType.Active, Rate = 40,
+                Desc = "체력 비율이 가장 낮은 아군의 상태이상 1개 해제 + 회복 (계수 100%)",
+                Cast = (b, u, _) =>
+                {
+                    var a = b.LowestHpAlly(u);
+                    b.Cleanse(u, a, "신농백초");
+                    b.Heal(u, a, 1.0, "신농백초");
+                } },
         };
 
         public static readonly Dictionary<string, SkillDef> Skill = Skills.ToDictionary(s => s.Id);
@@ -278,6 +539,57 @@ namespace MartialTactics.Battle
             U("dokgo", "독고패", "낭인검귀", "사파", 3100, 205, 110, 130, 155, "SABCB", "sajung"),
             U("baengni", "백리청", "의협", "정파", 3100, 190, 130, 140, 145, "ASBBA", "hyeolmaek"),
             U("jegal", "제갈운", "신의", "정파", 2800, 80, 190, 120, 140, "ABASB", "hoechun"),
+            // 출시 무인 50명 (스탯은 역할별 임시값, 밸런스 때 시뮬레이터로 정함)
+            U("jimyeong", "지명", "소림 지자배 승려", "정파", 3400, 145, 105, 195, 100, "BCSBA", "sorimgon"),
+            U("wonsosam", "원소삼", "삼결 걸개", "정파", 3000, 170, 140, 135, 150, "CSBAB", "yeonhwarak"),
+            U("danorang", "단오랑", "취권 여개", "정파", 2900, 190, 105, 115, 180, "ABCSB", "chwigwon"),
+            U("mokunbi", "목운비", "곤륜신행", "정파", 2700, 180, 115, 105, 190, "CSBAB", "dapseol"),
+            U("dojungak", "도중악", "공동철권", "정파", 3100, 195, 110, 145, 140, "BCSBA", "tongbae"),
+            U("yeopcheong", "엽청", "점창쾌검", "정파", 2900, 190, 105, 115, 180, "SBABC", "sipgubong"),
+            U("haunhak", "하운학", "청성검객", "정파", 2700, 85, 200, 105, 160, "ABCSB", "cheonsa"),
+            U("seokhaerang", "석해랑", "해남검수", "정파", 3100, 195, 110, 145, 140, "ABCSB", "nodo"),
+            U("hwangboyeol", "황보열", "황보세가 소가주", "정파", 3360, 210, 110, 160, 140, "SBABC", "dogeom", 4),
+            U("akjinmyeong", "악진명", "악가창수", "정파", 3000, 190, 115, 140, 145, "SBABC", "yukhap"),
+            U("eonseoyeon", "언서연", "언가권녀", "정파", 3100, 195, 110, 145, 140, "BCSBA", "bunggwon"),
+            U("cheongyangja", "청양자", "전진도사", "정파", 3000, 105, 180, 130, 140, "SBABC", "chilseong"),
+            U("yusocheong", "유소청", "형산검녀", "정파", 2900, 165, 145, 130, 155, "BABCS", "namak"),
+            U("gwakjin", "곽진", "숭산검수", "정파", 3100, 195, 110, 145, 140, "BCSBA", "jungak"),
+            U("wijagyeong", "위자경", "항산제자", "정파", 3600, 155, 95, 205, 90, "BCSBA", "bugak"),
+            U("notaegyeong", "노태경", "태산권사", "정파", 3000, 190, 115, 140, 145, "BCSBA", "cheolsa"),
+            U("jangbuun", "장부운", "모산도사", "정파", 2800, 90, 195, 110, 155, "ABCSB", "mosan"),
+            U("maenggwan", "맹관", "검각수문검", "정파", 3600, 155, 95, 205, 90, "SBABC", "ilbu"),
+            U("soyuk", "소육", "하오문 정보꾼", "사파", 2700, 180, 115, 105, 190, "CSBAB", "sujeon"),
+            U("hongmae", "홍매", "기루 주인", "사파", 2800, 90, 195, 110, 155, "ABCSB", "mihon"),
+            U("noesam", "뇌삼", "객잔 점소이", "사파", 2900, 190, 105, 115, 180, "CSBAB", "juwi"),
+            U("udaeho", "우대호", "녹림 도부수", "사파", 3000, 190, 115, 140, 145, "BABCS", "sampan"),
+            U("jinryeong", "진령", "녹림 궁수", "사파", 2800, 185, 110, 110, 185, "CSBAB", "yeonju"),
+            U("isam", "이삼", "장강수귀", "사파", 3100, 175, 135, 140, 145, "ABCSB", "nangri"),
+            U("suyeon", "수연", "장강비연", "사파", 2700, 180, 115, 105, 190, "SBABC", "biyeon"),
+            U("gangil", "강일", "철노 수적", "사파", 3000, 170, 140, 135, 150, "CSBAB", "jegalno"),
+            U("chilho", "칠호", "살막 칠호", "사파", 2900, 190, 105, 115, 180, "SBABC", "dogung"),
+            U("heukjeop", "흑접", "살막 흑접", "사파", 2700, 180, 115, 105, 190, "ABCSB", "maehwa"),
+            U("muyeong", "무영", "살막 무영", "사파", 2940, 195, 115, 115, 195, "SBABC", "jamyeong", 4),
+            U("gowol", "고월", "월하낭인", "사파", 3200, 200, 105, 150, 135, "BABCS", "wolha"),
+            U("jobaek", "조백", "현상 사냥꾼", "사파", 2900, 165, 145, 130, 155, "BCSBA", "poseung"),
+            U("yongcheonho", "용천호", "청룡당 창수", "마교", 3100, 195, 110, 145, 140, "CSBAB", "changnyong"),
+            U("cheongrin", "청린", "청룡당 쌍검녀", "마교", 2900, 190, 105, 115, 180, "CSBAB", "wonang"),
+            U("baekcheolsan", "백철산", "백호당 도객", "마교", 3000, 190, 115, 140, 145, "SBABC", "maengho"),
+            U("baeksogyo", "백소교", "백호당 조법녀", "마교", 2800, 185, 110, 110, 185, "SBABC", "hojo"),
+            U("gugap", "구갑", "현무당 방패수", "마교", 3600, 155, 95, 205, 90, "BCSBA", "deungpae"),
+            U("dunsan", "둔산", "현무당 철퇴수", "마교", 3400, 145, 105, 195, 100, "BCSBA", "yuseong"),
+            U("gwaksam", "곽삼", "천마 광도", "마교", 3100, 195, 110, 145, 140, "BABCS", "juhwa"),
+            U("yuhwa", "유화", "마교 약녀", "마교", 3000, 105, 180, 130, 140, "ABCSB", "idok"),
+            U("yeonbi", "연비", "소마녀", "마교", 2900, 165, 145, 130, 155, "BABCS", "gujeol"),
+            U("heukui", "흑의사자", "천마령 전령", "마교", 2900, 100, 185, 125, 145, "ABCSB", "cheonmaryeong"),
+            U("jangwiwon", "장위원", "진원표국 표두", "신비", 3780, 165, 100, 215, 95, "BCSBA", "hopyo", 4),
+            U("jeonsoho", "전소호", "표사", "신비", 2900, 165, 145, 130, 155, "CSBAB", "jinwon"),
+            U("haryeong", "하령", "여표사", "신비", 2800, 185, 110, 110, 185, "CSBAB", "sain"),
+            U("bokmyeon", "복면객", "정체불명의 복면객", "신비", 3200, 200, 105, 150, 135, "SBABC", "mumyeong"),
+            U("hoeui", "회의집사", "회의 집사", "신비", 2700, 85, 200, 105, 160, "ABCSB", "gyeokgong"),
+            U("eunmyeon", "은면여인", "은가면 여인", "신비", 2800, 90, 195, 110, 155, "BABCS", "sipmyeon"),
+            U("wangdaega", "왕대가", "객잔 숙수", "신비", 3200, 200, 105, 150, 135, "BABCS", "pojeong"),
+            U("nocho", "노초", "나루터 뱃사공", "신비", 3400, 145, 105, 195, 100, "ABCSB", "sunsu"),
+            U("sana", "산아", "약초꾼 소녀", "신비", 2900, 100, 185, 125, 145, "CSBAB", "sinnong"),
         };
 
         public static readonly Dictionary<string, UnitDef> Unit = Units.ToDictionary(u => u.Id);
