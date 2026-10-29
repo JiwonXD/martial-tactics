@@ -37,7 +37,7 @@ namespace MartialTactics.App
 
         // 대장간 자동 뽑기 설정 (장비 시스템이 아직 게임에 없어 화면 상태만)
         internal int KeepGrade = 3;                       // 남길 등급 컷 (Ui.GearGrades 순서)
-        internal bool EffectsOpen;
+        internal bool EffectsOpen, GradeOpen;
         internal readonly HashSet<int> Effects = new HashSet<int>();
         internal int ResearchElement;                     // 폐관수련 속성 갈래에서 보는 속성
         internal int EquipSlot;                          // 장비 바꾸기 칸 (0 무기 · 1 옷 · 2 신발 · 3 옥패)

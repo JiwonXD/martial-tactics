@@ -19,27 +19,26 @@ namespace MartialTactics.App
             var dim = LobbyScreen.Sheet(app, "자동 뽑기", out var body);
             dim.AddToClassList("bottom");
 
-            // 남길 등급: ‹ 희귀 이상 › 하나만 넘기고, 아래 줄에서 남는 등급(진하게)과 분해될 등급(흐리게)을 같이 보여 준다
-            int last = Ui.GearGrades.Length - 1;
-            var keep = Ui.El("row", "stepper");
-            var down = Ui.IconBtn(Icon.Kind.Prev, () => { app.KeepGrade = Math.Max(0, app.KeepGrade - 1); app.Refresh(); }, 20, "sq");
-            var up = Ui.IconBtn(Icon.Kind.Next, () => { app.KeepGrade = Math.Min(last, app.KeepGrade + 1); app.Refresh(); }, 20, "sq");
-            down.SetEnabled(app.KeepGrade > 0);
-            up.SetEnabled(app.KeepGrade < last);
-            var val = Ui.El("step-val");
-            val.Add(Ui.Lb(Ui.GearGrades[app.KeepGrade], "step-grade"), Ui.Lb("이상 남김", "step-sub"));
-            keep.Add(down, val, up);
+            // 남길 등급: 드롭다운. 고른 등급 이상만 남고 나머지는 바로 분해
+            var keep = Ui.El("row", "sh-label");
+            keep.Add(Ui.Lb("남길 등급", "b", "grow"));
+            var drop = new Button(() => { app.GradeOpen = !app.GradeOpen; app.Refresh(); });
+            drop.AddToClassList("dropdown");
+            drop.Add(Ui.Lb($"{Ui.GearGrades[app.KeepGrade]} 이상", "dd-t"), new Icon(app.GradeOpen ? Icon.Kind.Up : Icon.Kind.Down, 14));
+            keep.Add(drop);
             body.Add(keep);
-            var strip = Ui.El("grade-strip");
-            for (int i = 0; i <= last; i++)
+            if (app.GradeOpen)
             {
-                int g = i;
-                var seg = Ui.El("seg", i >= app.KeepGrade ? "keep" : "melt");
-                seg.Add(Ui.Lb(Ui.GearGrades[i], "seg-t"));
-                seg.RegisterCallback<ClickEvent>(_ => { app.KeepGrade = g; app.Refresh(); });
-                strip.Add(seg);
+                var list = Ui.El("dd-list");
+                for (int i = Ui.GearGrades.Length - 1; i >= 0; i--)
+                {
+                    int g = i;
+                    var item = Ui.Btn($"{Ui.GearGrades[i]} 이상", () => { app.KeepGrade = g; app.GradeOpen = false; app.Refresh(); }, "dd-item");
+                    if (i == app.KeepGrade) item.AddToClassList("on");
+                    list.Add(item);
+                }
+                body.Add(list);
             }
-            body.Add(strip);
 
             var fx = Ui.El("row", "sh-label");
             fx.Add(Ui.Lb("특수효과", "b", "grow"), Ui.Lb("영웅 이상", "lb"));
