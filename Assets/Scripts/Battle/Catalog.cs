@@ -6,7 +6,7 @@ namespace MartialTactics.Battle
 {
     public enum DamageKind { Ext, Int } // Ext = 무기 피해(외공 vs 호신), Int = 내공 피해(내공 vs 내공)
 
-    public enum ModKey { Ext, Int, Def, Spd, Counter, Dealt, Taken, TakenExt, TakenInt, Crit }
+    public enum ModKey { Ext, Int, Def, Spd, Counter, Dealt, Taken, TakenExt, TakenInt, Crit, CritDmg, SkillDmg, Evade, CtrlHit, CtrlRes }
 
     /// <summary>
     /// 무공 정의. Setup은 준비 합에 1회, Cast는 발동 시 (연계 무공은 target에 평타 대상이 온다).
@@ -29,11 +29,28 @@ namespace MartialTactics.Battle
         public int Hp, Ext, Int, Def, Spd;
     }
 
+    /// <summary>
+    /// 무인 한 명이 낀 장비의 합계. 스탯은 무인 스탯에 더한 뒤 적성 배수를 곱한다.
+    /// 특수효과는 비율 (0.05 = 5%). 웹 시뮬레이터의 gear와 같다.
+    /// </summary>
+    public sealed class Gear
+    {
+        public int Ext, Int, Def, Spd;
+        public double Crit;      // 치명타율 (무기 피해에만)
+        public double CritDmg;   // 치명타 피해 (치명타 배수에 더함)
+        public double SkillDmg;  // 무공 피해 증가 (평타 제외)
+        public double DmgReduce; // 받는 피해 감소
+        public double Evade;     // 회피 (지속 피해는 못 피함)
+        public double CtrlHit;   // 제어 적중 (상대 제어 저항을 깎음)
+        public double CtrlRes;   // 제어 저항 (점혈·혼란·봉인·무장해제를 막을 확률)
+    }
+
     public sealed class TeamSlot
     {
         public string Unit;
         public string[] Skills; // 무공창 2·3칸 (null = 비움)
         public UnitDef Def;     // 승급 스탯을 더한 무인 정보 (null = Catalog 기본값)
+        public Gear Gear;       // 장비 합계 (null = 없음)
     }
 
     /// <summary>Slots[0] = 주장.</summary>

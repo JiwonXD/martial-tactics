@@ -25,7 +25,9 @@
     taunt: '도발', poison: '중독', bleed: '출혈', injury: '내상', guard: '호위',
   };
   const DEBUFFS = ['stun', 'confuse', 'silence', 'disarm', 'poison', 'bleed', 'injury'];
-  const CONTROLS = ['stun', 'confuse', 'silence', 'disarm']; // 두전성이가 되돌리는 제어
+  const CONTROLS = ['stun', 'confuse', 'silence', 'disarm']; // 두전성이가 되돌리는 제어, 제어 적중·저항이 걸리는 상태
+  // 장비 특수효과 (값은 비율, 0.05 = 5%). 장비 스탯 ext·int·def·spd는 무인 스탯에 더한 뒤 적성 배수를 곱한다.
+  const GEAR_EFFECTS = { crit: '치명타율', critDmg: '치명타 피해', skillDmg: '무공 피해 증가', dmgReduce: '받는 피해 감소', evade: '회피', ctrlHit: '제어 적중', ctrlRes: '제어 저항' };
 
   // ---------- 무공 ----------
   // 모든 무공은 어느 한 무인의 무공이다. 추출하면 다른 무인의 무공창 2·3칸에 넣을 수 있다.
@@ -208,7 +210,8 @@
   const UNIT = Object.fromEntries(UNITS.map(u => [u.id, u]));
 
   // ---------- 편성 검증 ----------
-  // team = { element: '금', slots: [{ unit, skills: [id, id] } x3] } (slots[0] = 주장)
+  // team = { element: '금', slots: [{ unit, skills: [id, id], gear? } x3] } (slots[0] = 주장)
+  // gear = 장비 합계 { ext, int, def, spd, crit, critDmg, skillDmg, dmgReduce, evade, ctrlHit, ctrlRes } (없는 값은 0)
   function validateTeam(team) {
     const errors = [];
     if (!ELEMENTS.includes(team.element)) errors.push('속성을 고르세요.');
@@ -256,17 +259,21 @@
       const ei = ELEMENTS.indexOf(team.element);
       return team.slots.map((s, pos) => {
         const d = UNIT[s.unit];
+        const g = s.gear || {};
         const aptMult = APT_MULT[d.apt[ei]];
         const mult = aptMult * (sameFaction ? 1 + CFG.factionBonus : 1);
-        return {
+        const u = {
           side, pos, def: d, name: d.name, maxHp: d.hp, hp: d.hp, dead: false,
-          base: { ext: d.ext * mult, int: d.int * mult, def: d.def * mult, spd: d.spd * mult },
+          base: { ext: (d.ext + (g.ext || 0)) * mult, int: (d.int + (g.int || 0)) * mult, def: (d.def + (g.def || 0)) * mult, spd: (d.spd + (g.spd || 0)) * mult },
           apt: d.apt[ei],
           skills: [d.skill, ...s.skills.filter(Boolean)].map(id => SKILL[id]),
           status: {}, mods: [], immune: new Set(), prep: null,
           hooks: { roundStart: [], damaged: [], dealt: [] },
           rec: { dealt: 0, healed: 0, taken: 0, procs: {}, bySkill: {} },
         };
+        // 장비 특수효과는 전투 내내 걸린 효과로 둔다. 받는 피해 감소는 taken에 더한다.
+        for (const k of Object.keys(GEAR_EFFECTS)) if (g[k]) this.addMod(u, k === 'dmgReduce' ? 'taken' : k, k === 'dmgReduce' ? -g[k] : g[k], Infinity, '장비');
+        return u;
       });
     }
 
@@ -324,8 +331,12 @@
       if (dst.dead) return;
       if (dst.immune.has(key)) { this.log(`${this.tag(dst)}: ${STATUS_NAMES[key]} 면역`); return; }
       if (dst.status[key]) return; // 같은 종류는 중첩되지 않음
+      if (CONTROLS.includes(key) && src.side !== dst.side) { // 제어 저항: (저항 - 공격자 제어 적중) 확률로 막음
+        const resist = this.mod(dst, 'ctrlRes') - this.mod(src, 'ctrlHit');
+        if (resist > 0 && this.rand() < resist) { this.log(`${this.tag(dst)}: ${STATUS_NAMES[key]} 저항`); return; }
+      }
       const entry = { rounds, since: this.turnSeq };
-      if (dot) Object.assign(entry, { tick: Math.round(this.rawDamage(src, dst, dot.kind, dot.coef)), src, label: this.acting });
+      if (dot) Object.assign(entry, { tick: Math.round(this.rawDamage(src, dst, dot.kind, dot.coef, true)), src, label: this.acting });
       dst.status[key] = entry;
       this.log(`${this.tag(dst)}: ${STATUS_NAMES[key]} (${rounds}합)`);
       if (!reflected && CONTROLS.includes(key) && src.side !== dst.side && !src.dead) {
@@ -334,7 +345,8 @@
       }
     }
 
-    rawDamage(src, dst, kind, coef) {
+    // skill = 무공으로 주는 피해 (평타 아님). 장비의 무공 피해 증가가 붙는다.
+    rawDamage(src, dst, kind, coef, skill) {
       const atk = this.stat(src, kind === 'ext' ? 'ext' : 'int');
       const dfn = this.stat(dst, kind === 'ext' ? 'def' : 'int');
       let dmg = (CFG.baseDmg + Math.max(0, atk - dfn) * CFG.statK) * coef;
@@ -345,15 +357,20 @@
       }
       dmg *= 0.6 + 0.4 * src.hp / src.maxHp; // 체력 보정
       dmg *= Math.max(0, 1 + this.mod(src, 'dealt'));
+      if (skill) dmg *= 1 + this.mod(src, 'skillDmg');
       dmg *= Math.max(0.1, 1 + this.mod(dst, 'taken') + this.mod(dst, kind === 'ext' ? 'takenExt' : 'takenInt'));
       return dmg;
     }
 
     damage(src, dst, kind, coef, label, opts = {}) {
       if (dst.dead || this.over) return 0;
-      let dmg = this.rawDamage(src, dst, kind, coef) * (0.9 + 0.2 * this.rand());
+      if (src.side !== dst.side) { // 회피: 지속 피해는 피하지 못함
+        const evade = this.mod(dst, 'evade');
+        if (evade > 0 && this.rand() < evade) { this.log(`${this.tag(src)}의 ${label} → ${this.tag(dst)} 회피`); return 0; }
+      }
+      let dmg = this.rawDamage(src, dst, kind, coef, label !== '평타') * (0.9 + 0.2 * this.rand());
       let crit = false;
-      if (kind === 'ext' && this.rand() < this.mod(src, 'crit')) { dmg *= CFG.critMult; crit = true; }
+      if (kind === 'ext' && this.rand() < this.mod(src, 'crit')) { dmg *= CFG.critMult + this.mod(src, 'critDmg'); crit = true; }
       dmg = Math.max(1, Math.round(dmg));
       const g = dst.status.guard; // 호위: 피해 일부를 호위하는 무인이 대신 받음
       if (g && src.side !== dst.side && !g.by.dead) {
@@ -542,7 +559,7 @@
     return agg;
   }
 
-  const api = { CFG, POS_NAMES, ELEMENTS, BEATS, APT_MULT, TYPE_NAMES, STATUS_NAMES, SKILLS, SKILL, UNITS, UNIT, validateTeam, Battle, simulate };
+  const api = { CFG, POS_NAMES, ELEMENTS, BEATS, APT_MULT, TYPE_NAMES, STATUS_NAMES, GEAR_EFFECTS, SKILLS, SKILL, UNITS, UNIT, validateTeam, Battle, simulate };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.WuxiaSim = api;
 })(typeof self !== 'undefined' ? self : this);

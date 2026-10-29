@@ -72,6 +72,10 @@ select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px s
 .skills-line b { font-weight: 600; }
 .type-tag { font-size: 11px; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; margin-right: 4px; }
 .bonus { font-size: 12.5px; color: var(--ink-soft); }
+.gear summary { font-size: 12.5px; color: var(--ink-soft); cursor: pointer; }
+.gear-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 6px; margin-top: 6px; }
+@media (max-width: 520px) { .gear-grid { grid-template-columns: repeat(2, 1fr); } }
+.gear-grid label { display: grid; gap: 2px; font-size: 11.5px; color: var(--ink-soft); }
 .errors { color: var(--crimson); font-size: 12.5px; margin: 0; padding-left: 18px; }
 
 .controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
@@ -181,6 +185,18 @@ footer { font-size: 12px; color: var(--ink-soft); }
     return ids;
   }
 
+  // 장비 합계 입력: 스탯은 그대로, 특수효과는 % (엔진에는 비율로 넘김)
+  const GEAR_STATS = { ext: '외공', int: '내공', def: '호신', spd: '경공' };
+  function gearBox(side, i, slot) {
+    const g = slot.gear || {};
+    const on = Object.values(g).some(Boolean);
+    const field = (k, label, pct) => `<label>${label}${pct ? ' %' : ''}<input type="number" min="0" step="${pct ? 1 : 5}" id="gear-${side}-${i}-${k}" data-slot="${i}" data-k="${k}" data-pct="${pct ? 1 : ''}" value="${g[k] ? (pct ? Math.round(g[k] * 1000) / 10 : g[k]) : ''}" placeholder="0"></label>`;
+    return `<details class="gear"${on ? ' open' : ''}><summary>장비${on ? ' (적용 중)' : ''}</summary><div class="gear-grid">
+      ${Object.entries(GEAR_STATS).map(([k, n]) => field(k, n, false)).join('')}
+      ${Object.entries(S.GEAR_EFFECTS).map(([k, n]) => field(k, n, true)).join('')}
+    </div></details>`;
+  }
+
   function renderTeam(side) {
     const team = state[side];
     const el = document.getElementById('team-' + side);
@@ -228,6 +244,7 @@ footer { font-size: 12px; color: var(--ink-soft); }
         </div>
         <div class="meta">${u.title} · 적성 <span class="apt" data-g="${u.apt[ei]}">${u.apt[ei]}</span> (×${S.APT_MULT[u.apt[ei]]}) · 체력 ${u.hp} · 외공 ${u.ext} · 내공 ${u.int} · 호신 ${u.def} · 경공 ${u.spd}</div>
         <div class="skills-line">${skills}</div>
+        ${gearBox(side, i, slot)}
       </div></div>`;
     });
     html += `<div class="bonus">${sameFaction ? `세력 보너스: ${factions[0]} 3명, 전 스탯 +${Math.round(S.CFG.factionBonus * 100)}%` : '세력 보너스 없음 (세력이 섞임)'}</div>`;
@@ -239,6 +256,12 @@ footer { font-size: 12px; color: var(--ink-soft); }
     el.querySelector(`#preset-${side}`).addEventListener('change', e => { if (PRESETS[e.target.value]) { state[side] = clone(PRESETS[e.target.value].team); renderTeam(side); } });
     el.querySelectorAll('select[id^="unit-"]').forEach(s => s.addEventListener('change', () => { team.slots[+s.dataset.slot].unit = s.value; renderTeam(side); }));
     el.querySelectorAll('select[id^="skill-"]').forEach(s => s.addEventListener('change', () => { team.slots[+s.dataset.slot].skills[+s.dataset.k] = s.value || null; renderTeam(side); }));
+    el.querySelectorAll('input[id^="gear-"]').forEach(inp => inp.addEventListener('change', () => {
+      const slot = team.slots[+inp.dataset.slot];
+      const v = Math.max(0, parseFloat(inp.value) || 0);
+      slot.gear = { ...slot.gear, [inp.dataset.k]: inp.dataset.pct ? v / 100 : v };
+      renderTeam(side);
+    }));
     updateButtons();
   }
 

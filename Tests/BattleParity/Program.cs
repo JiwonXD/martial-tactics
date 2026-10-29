@@ -87,8 +87,21 @@ static class Program
         {
             Unit = s.GetProperty("unit").GetString(),
             Skills = s.GetProperty("skills").EnumerateArray().Select(x => x.ValueKind == JsonValueKind.Null ? null : x.GetString()).ToArray(),
+            Gear = s.TryGetProperty("gear", out var g) ? ReadGear(g) : null,
         }).ToArray(),
     };
+
+    static Gear ReadGear(JsonElement g)
+    {
+        int I(string k) => g.TryGetProperty(k, out var v) ? v.GetInt32() : 0;
+        double D(string k) => g.TryGetProperty(k, out var v) ? v.GetDouble() : 0;
+        return new Gear
+        {
+            Ext = I("ext"), Int = I("int"), Def = I("def"), Spd = I("spd"),
+            Crit = D("crit"), CritDmg = D("critDmg"), SkillDmg = D("skillDmg"), DmgReduce = D("dmgReduce"),
+            Evade = D("evade"), CtrlHit = D("ctrlHit"), CtrlRes = D("ctrlRes"),
+        };
+    }
 
     static string Sha(string s) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(s))).ToLowerInvariant();
 }

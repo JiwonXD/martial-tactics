@@ -140,16 +140,31 @@ namespace MartialTactics.Battle
                 var d = defs[pos];
                 double aptMult = BattleRules.AptMult[d.Apt[ei]];
                 double mult = aptMult * (sameFaction ? 1 + Config.FactionBonus : 1);
+                var g = s.Gear ?? new Gear();
                 var skills = new List<SkillDef> { Catalog.Skill[d.Skill] };
                 skills.AddRange(s.Skills.Where(id => !string.IsNullOrEmpty(id)).Select(id => Catalog.Skill[id]));
-                list.Add(new Unit
+                var u = new Unit
                 {
                     Side = side, Pos = pos, Source = d, Name = d.Name, MaxHp = d.Hp, Hp = d.Hp,
-                    BaseExt = d.Ext * mult, BaseInt = d.Int * mult, BaseDef = d.Def * mult, BaseSpd = d.Spd * mult,
+                    BaseExt = (d.Ext + g.Ext) * mult, BaseInt = (d.Int + g.Int) * mult, BaseDef = (d.Def + g.Def) * mult, BaseSpd = (d.Spd + g.Spd) * mult,
                     Apt = d.Apt[ei], Skills = skills,
-                });
+                };
+                // 장비 특수효과는 전투 내내 걸린 효과로 둔다. 받는 피해 감소는 Taken에 더한다. (웹과 같은 순서)
+                AddGearMod(u, ModKey.Crit, g.Crit);
+                AddGearMod(u, ModKey.CritDmg, g.CritDmg);
+                AddGearMod(u, ModKey.SkillDmg, g.SkillDmg);
+                AddGearMod(u, ModKey.Taken, -g.DmgReduce);
+                AddGearMod(u, ModKey.Evade, g.Evade);
+                AddGearMod(u, ModKey.CtrlHit, g.CtrlHit);
+                AddGearMod(u, ModKey.CtrlRes, g.CtrlRes);
+                list.Add(u);
             }
             return list;
+        }
+
+        void AddGearMod(Unit u, ModKey key, double value)
+        {
+            if (value != 0) AddMod(u, key, value, double.PositiveInfinity, "장비");
         }
 
         // --- 조회 ---
@@ -247,11 +262,17 @@ namespace MartialTactics.Battle
             if (dst.Dead) return;
             if (dst.Immune.Contains(key)) { Log($"{Tag(dst)}: {BattleRules.StatusNames[key]} 면역"); return; }
             if (dst.Has(key)) return; // 같은 종류는 중첩되지 않음
+            if (Array.IndexOf(Controls, key) >= 0 && src.Side != dst.Side)
+            {
+                // 제어 저항: (저항 - 공격자 제어 적중) 확률로 막음
+                double resist = Mod(dst, ModKey.CtrlRes) - Mod(src, ModKey.CtrlHit);
+                if (resist > 0 && Rand() < resist) { Log($"{Tag(dst)}: {BattleRules.StatusNames[key]} 저항"); return; }
+            }
             var entry = new StatusEntry { Rounds = rounds, Since = turnSeq };
             if (dot != null)
             {
                 entry.HasDot = true;
-                entry.Tick = RoundJs(RawDamage(src, dst, dot.Kind, dot.Coef));
+                entry.Tick = RoundJs(RawDamage(src, dst, dot.Kind, dot.Coef, true));
                 entry.Src = src;
                 entry.Label = acting;
             }
@@ -268,7 +289,8 @@ namespace MartialTactics.Battle
             }
         }
 
-        double RawDamage(Unit src, Unit dst, DamageKind kind, double coef)
+        // skill = 무공으로 주는 피해 (평타 아님). 장비의 무공 피해 증가가 붙는다.
+        double RawDamage(Unit src, Unit dst, DamageKind kind, double coef, bool skill)
         {
             double atk = Stat(src, kind == DamageKind.Ext ? ModKey.Ext : ModKey.Int);
             double dfn = Stat(dst, kind == DamageKind.Ext ? ModKey.Def : ModKey.Int);
@@ -281,6 +303,7 @@ namespace MartialTactics.Battle
             }
             dmg *= 0.6 + 0.4 * src.Hp / src.MaxHp; // 체력 보정
             dmg *= Math.Max(0, 1 + Mod(src, ModKey.Dealt));
+            if (skill) dmg *= 1 + Mod(src, ModKey.SkillDmg);
             dmg *= Math.Max(0.1, 1 + Mod(dst, ModKey.Taken) + Mod(dst, kind == DamageKind.Ext ? ModKey.TakenExt : ModKey.TakenInt));
             return dmg;
         }
@@ -288,9 +311,15 @@ namespace MartialTactics.Battle
         public int Damage(Unit src, Unit dst, DamageKind kind, double coef, string label, bool normal = false, bool counter = false)
         {
             if (dst.Dead || Over) return 0;
-            double raw = RawDamage(src, dst, kind, coef) * (0.9 + 0.2 * Rand());
+            if (src.Side != dst.Side)
+            {
+                // 회피: 지속 피해는 피하지 못함
+                double evade = Mod(dst, ModKey.Evade);
+                if (evade > 0 && Rand() < evade) { Log($"{Tag(src)}의 {label} → {Tag(dst)} 회피"); return 0; }
+            }
+            double raw = RawDamage(src, dst, kind, coef, label != "평타") * (0.9 + 0.2 * Rand());
             bool crit = false;
-            if (kind == DamageKind.Ext && Rand() < Mod(src, ModKey.Crit)) { raw *= Config.CritMult; crit = true; }
+            if (kind == DamageKind.Ext && Rand() < Mod(src, ModKey.Crit)) { raw *= Config.CritMult + Mod(src, ModKey.CritDmg); crit = true; }
             int dmg = Math.Max(1, RoundJs(raw));
             // 호위: 피해 일부를 호위하는 무인이 대신 받음
             if (dst.Status.TryGetValue(StatusKind.Guard, out var g) && g.By != null && src.Side != dst.Side && !g.By.Dead)
