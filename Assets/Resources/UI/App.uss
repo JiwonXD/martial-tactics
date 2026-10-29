@@ -901,3 +901,17 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .upic > .lv { top: 9px; left: 8px; }
 .upic > .inDeck { top: 27px; left: 8px; }
 .upic > .spare { top: 9px; right: 8px; }
+
+/* 자동 뽑기: 남길 등급 넘기기 + 등급 줄 (진하게 = 남김, 흐리게 = 바로 분해) */
+.stepper { margin-top: 4px; }
+.step-val { flex-grow: 1; height: 56px; margin: 0 8px; align-items: center; justify-content: center; background-color: #1f1d1a; border-right-width: 4px; border-color: #b33a2c; }
+.step-grade { font-size: 22px; -unity-font-style: bold; color: #f6f1e6; letter-spacing: 3px; -unity-text-align: middle-center; }
+.step-sub { font-size: 11px; color: #cfc5b3; -unity-text-align: middle-center; }
+.stepper > .sq { width: 48px; height: 56px; }
+.grade-strip { flex-direction: row; margin-top: 8px; }
+.seg { flex-grow: 1; flex-basis: 0; height: 30px; margin: 0 1px; align-items: center; justify-content: center; }
+.seg.keep { background-color: #3a3631; }
+.seg.melt { background-color: rgba(31, 29, 26, 0.12); }
+.seg-t { font-size: 10px; -unity-text-align: middle-center; }
+.seg.keep > .seg-t { color: #f6f1e6; -unity-font-style: bold; }
+.seg.melt > .seg-t { color: #8a8378; }
