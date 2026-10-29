@@ -85,13 +85,13 @@ namespace MartialTactics.Battle
         public static readonly List<SkillDef> Skills = new List<SkillDef>
         {
             new SkillDef { Id = "cheongun", Name = "청운검기", Type = SkillType.Active, Rate = 35,
-                Desc = "적 전체에게 내공 피해 90%",
-                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 3)) b.Damage(u, t, DamageKind.Int, 0.9, "청운검기"); } },
+                Desc = "적 전체에게 내공 피해 80%",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 3)) b.Damage(u, t, DamageKind.Int, 0.8, "청운검기"); } },
             new SkillDef { Id = "saengsaeng", Name = "생생조화신공", Type = SkillType.Aura,
-                Desc = "1~4합 동안 매 합 시작 시 아군 전체 회복 (계수 50%)",
+                Desc = "1~4합 동안 매 합 시작 시 아군 전체 회복 (계수 42%)",
                 Setup = (b, u) => u.RoundStart.Add(() =>
                 {
-                    if (b.Round <= 4) foreach (var a in b.Allies(u)) b.Heal(u, a, 0.5, "생생조화신공");
+                    if (b.Round <= 4) foreach (var a in b.Allies(u)) b.Heal(u, a, 0.42, "생생조화신공");
                 }) },
             new SkillDef { Id = "geumgang", Name = "금강불괴", Type = SkillType.Passive,
                 Desc = "점혈 면역, 받는 무기 피해 -20%",
@@ -120,8 +120,8 @@ namespace MartialTactics.Battle
                 Desc = "1~3합 동안 자신에게 도발, 받는 피해 -30%",
                 Setup = (b, u) => { b.AddStatus(u, u, StatusKind.Taunt, 3); b.AddMod(u, ModKey.Taken, -0.3, 3, "철벽마갑"); } },
             new SkillDef { Id = "changgung", Name = "창궁검법", Type = SkillType.Chase, Rate = 45,
-                Desc = "평타 후 같은 적에게 무기 피해 160%",
-                Cast = (b, u, t) => b.Damage(u, t, DamageKind.Ext, 1.6, "창궁검법") },
+                Desc = "평타 후 같은 적에게 무기 피해 145%",
+                Cast = (b, u, t) => b.Damage(u, t, DamageKind.Ext, 1.45, "창궁검법") },
             new SkillDef { Id = "mancheon", Name = "만천화우", Type = SkillType.Active, Rate = 30,
                 Desc = "무작위 적에게 3회 무기 피해 70%, 타격마다 30% 확률로 출혈(2합)",
                 Cast = (b, u, _) =>
@@ -134,8 +134,8 @@ namespace MartialTactics.Battle
                         }
                 } },
             new SkillDef { Id = "ildo", Name = "일도양단", Type = SkillType.Chase, Rate = 35,
-                Desc = "평타 후 같은 적에게 무기 피해 200% + 무장해제(1합)",
-                Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 2.0, "일도양단"); b.AddStatus(u, t, StatusKind.Disarm, 1); } },
+                Desc = "평타 후 같은 적에게 무기 피해 160% + 무장해제(1합)",
+                Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 1.45, "일도양단"); b.AddStatus(u, t, StatusKind.Disarm, 1); } },
             Formation("bukdu", "천강북두진", "금", "아군 전체 주는 피해 +12%",
                 (b, u) => { foreach (var a in b.Allies(u)) b.AddMod(a, ModKey.Dealt, 0.12, Inf, "천강북두진"); }),
             Formation("cheongryong", "청룡진", "목", "매 합 시작 시 아군 전체 회복 (계수 25%)",
@@ -171,10 +171,10 @@ namespace MartialTactics.Battle
                     foreach (var t in b.PickEnemies(u, 3)) b.Damage(u, t, DamageKind.Int, 0.5, "사자후");
                 } },
             new SkillDef { Id = "bantan", Name = "반탄경", Type = SkillType.Passive,
-                Desc = "평타에 맞으면 30% 확률로 반격 (무기 피해 80%)",
+                Desc = "평타에 맞으면 35% 확률로 반격 (무기 피해 100%)",
                 Setup = (b, u) => u.Damaged.Add((src, normal, kind, dmg) =>
                 {
-                    if (normal && !src.Dead && b.Rand() < 0.3) b.Damage(u, src, DamageKind.Ext, 0.8, "반탄경", counter: true);
+                    if (normal && !src.Dead && b.Rand() < 0.35) b.Damage(u, src, DamageKind.Ext, 1.0, "반탄경", counter: true);
                 }) },
             new SkillDef { Id = "sangong", Name = "산공독", Type = SkillType.Active, Rate = 35,
                 Desc = "적 2명 봉인(1합)",
@@ -228,22 +228,22 @@ namespace MartialTactics.Battle
                     b.Log($"{b.Tag(u)}의 사중구활: 체력 비율이 {(low ? "낮아" : "높아")} 아군 전체 {(low ? "주는 피해 +15%" : "받는 피해 -10%")}");
                 }) },
             new SkillDef { Id = "hyeolmaek", Name = "혈맥상통", Type = SkillType.Passive,
-                Desc = "3합부터 자신이 무기 피해를 줄 때마다 체력 비율이 가장 낮은 아군이 그 피해의 20%를 회복",
+                Desc = "3합부터 자신이 무기 피해를 줄 때마다 체력 비율이 가장 낮은 아군이 그 피해의 35%를 회복",
                 Setup = (b, u) => u.Dealt.Add((dmg, kind) =>
                 {
                     if (b.Round < 3 || kind != DamageKind.Ext) return;
-                    b.HealFlat(u, b.LowestHpAlly(u), dmg * 0.2, "혈맥상통");
+                    b.HealFlat(u, b.LowestHpAlly(u), dmg * 0.35, "혈맥상통");
                 }) },
             new SkillDef { Id = "gwangpung", Name = "광풍쾌검", Type = SkillType.Passive,
-                Desc = "무기 피해 치명타 확률 +25% (치명타 시 1.5배)",
-                Setup = (b, u) => b.AddMod(u, ModKey.Crit, 0.25, Inf, "광풍쾌검") },
+                Desc = "무기 피해 치명타 확률 +35% (치명타 시 1.5배)",
+                Setup = (b, u) => b.AddMod(u, ModKey.Crit, 0.35, Inf, "광풍쾌검") },
             // ---- 출시 무인 50명 무공 (수치는 임시, 밸런스 때 시뮬레이터로 정함) ----
             new SkillDef { Id = "sorimgon", Name = "소림곤법", Type = SkillType.Chase, Rate = 40,
                 Desc = "평타 후 같은 적에게 무기 피해 130%, 2합 동안 자신이 받는 무기 피해 -15%",
                 Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 1.3, "소림곤법"); b.AddMod(u, ModKey.TakenExt, -0.15, 2, "소림곤법"); } },
             new SkillDef { Id = "yeonhwarak", Name = "연화락", Type = SkillType.Active, Rate = 35,
-                Desc = "적 2명에게 무기 피해 80%, 2합 동안 그 적들이 받는 피해 +15%",
-                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 2)) { b.Damage(u, t, DamageKind.Ext, 0.8, "연화락"); b.AddMod(t, ModKey.Taken, 0.15, 2, "연화락"); } } },
+                Desc = "적 2명에게 무기 피해 80%, 2합 동안 그 적들이 받는 피해 +10%",
+                Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 2)) { b.Damage(u, t, DamageKind.Ext, 0.8, "연화락"); b.AddMod(t, ModKey.Taken, 0.1, 2, "연화락"); } } },
             new SkillDef { Id = "chwigwon", Name = "취권", Type = SkillType.Passive,
                 Desc = "회피 +20%, 회피하면 50% 확률로 반격 (무기 피해 80%)",
                 Setup = (b, u) =>
@@ -252,8 +252,8 @@ namespace MartialTactics.Battle
                     u.Evaded.Add(src => { if (!src.Dead && b.Rand() < 0.5) b.Damage(u, src, DamageKind.Ext, 0.8, "취권", counter: true); });
                 } },
             new SkillDef { Id = "dapseol", Name = "답설무흔", Type = SkillType.Aura,
-                Desc = "1~3합 동안 자신 경공 +20%, 회피 +15%",
-                Setup = (b, u) => { b.AddMod(u, ModKey.Spd, 0.2, 3, "답설무흔"); b.AddMod(u, ModKey.Evade, 0.15, 3, "답설무흔"); } },
+                Desc = "1~4합 동안 자신 경공 +20%, 회피 +20%",
+                Setup = (b, u) => { b.AddMod(u, ModKey.Spd, 0.2, 4, "답설무흔"); b.AddMod(u, ModKey.Evade, 0.2, 4, "답설무흔"); } },
             new SkillDef { Id = "tongbae", Name = "통배권", Type = SkillType.Chase, Rate = 40,
                 Desc = "평타 후 같은 적에게 무기 피해 120%, 2합 동안 대상 호신 -20%",
                 Cast = (b, u, t) => { b.Damage(u, t, DamageKind.Ext, 1.2, "통배권"); b.AddMod(t, ModKey.Def, -0.2, 2, "통배권"); } },
@@ -334,13 +334,13 @@ namespace MartialTactics.Battle
                     }
                 } },
             new SkillDef { Id = "juwi", Name = "주위상", Type = SkillType.Passive,
-                Desc = "체력이 40% 아래로 처음 떨어지면 2합 동안 회피 +40%",
+                Desc = "체력이 40% 아래로 처음 떨어지면 3합 동안 회피 +50%",
                 Setup = (b, u) => u.Damaged.Add((src, normal, kind, dmg) =>
                 {
                     if (u.Stacks.ContainsKey("주위상") || (double)u.Hp / u.MaxHp >= 0.4) return;
                     b.Stack(u, "주위상", 1);
-                    b.AddMod(u, ModKey.Evade, 0.4, 2, "주위상");
-                    b.Log($"{b.Tag(u)}의 주위상: 2합 동안 회피 +40%");
+                    b.AddMod(u, ModKey.Evade, 0.5, 3, "주위상");
+                    b.Log($"{b.Tag(u)}의 주위상: 3합 동안 회피 +50%");
                 }) },
             new SkillDef { Id = "sampan", Name = "삼판부", Type = SkillType.Active, Rate = 35,
                 Desc = "적 1명에게 무기 피해, 1~3번째 발동은 180%, 그 뒤엔 80%",
@@ -365,26 +365,26 @@ namespace MartialTactics.Battle
                 Desc = "체력 비율이 가장 낮은 적 1명에게 무기 피해 160%",
                 Cast = (b, u, _) => { var t = b.LowestHpFoe(u); if (t != null) b.Damage(u, t, DamageKind.Ext, 1.6, "도궁비현"); } },
             new SkillDef { Id = "maehwa", Name = "매화침", Type = SkillType.Chase, Rate = 40,
-                Desc = "평타 후 같은 적에게 중독(3합, 매 합 내공 피해 40%), 이미 중독이면 중독 피해가 바로 한 번 터짐",
+                Desc = "평타 후 같은 적에게 중독(3합, 매 합 내공 피해 50%), 이미 중독이면 중독 피해가 바로 한 번 터짐",
                 Cast = (b, u, t) =>
                 {
                     if (t.Has(StatusKind.Poison)) b.BurstDot(t, StatusKind.Poison);
-                    else b.AddStatus(u, t, StatusKind.Poison, 3, new Dot(DamageKind.Int, 0.4));
+                    else b.AddStatus(u, t, StatusKind.Poison, 3, new Dot(DamageKind.Int, 0.5));
                 } },
             new SkillDef { Id = "jamyeong", Name = "잠영보", Type = SkillType.Aura,
-                Desc = "1~2합 동안 은신 (적이 노리지 못함), 처음 주는 피해 +30%",
+                Desc = "1~3합 동안 은신 (적이 노리지 못함), 처음 주는 피해 +60%",
                 Setup = (b, u) =>
                 {
-                    b.AddStatus(u, u, StatusKind.Stealth, 2);
-                    b.AddMod(u, ModKey.Dealt, 0.3, Inf, "잠영보");
+                    b.AddStatus(u, u, StatusKind.Stealth, 3);
+                    b.AddMod(u, ModKey.Dealt, 0.6, Inf, "잠영보");
                     u.Dealt.Add((dmg, kind) => u.Mods.RemoveAll(m => m.Label == "잠영보"));
                 } },
             new SkillDef { Id = "wolha", Name = "월하독작", Type = SkillType.Passive,
-                Desc = "매 합 시작 시 쓰러진 아군 1명마다 자신 주는 피해 +15%",
+                Desc = "매 합 시작 시 쓰러진 아군 1명마다 자신 주는 피해 +50%",
                 Setup = (b, u) => u.RoundStart.Add(() =>
                 {
                     int down = b.Units.Count(a => a.Side == u.Side && a.Dead);
-                    if (down > 0) b.AddMod(u, ModKey.Dealt, 0.15 * down, Inf, "월하독작");
+                    if (down > 0) b.AddMod(u, ModKey.Dealt, 0.5 * down, Inf, "월하독작");
                 }) },
             new SkillDef { Id = "poseung", Name = "포승술", Type = SkillType.Chase, Rate = 35,
                 Desc = "평타 후 같은 적 무장해제(1합) + 2합 동안 경공 -20%",
@@ -417,11 +417,11 @@ namespace MartialTactics.Battle
                 Desc = "적 1명에게 무기 피해 130%, 40% 확률로 점혈(1합)",
                 Cast = (b, u, _) => { foreach (var t in b.PickEnemies(u, 1)) { b.Damage(u, t, DamageKind.Ext, 1.3, "유성추"); if (b.Rand() < 0.4) b.AddStatus(u, t, StatusKind.Stun, 1); } } },
             new SkillDef { Id = "juhwa", Name = "주화입마", Type = SkillType.Passive,
-                Desc = "받는 피해 +10%, 매 합 시작 시 잃은 체력 비율만큼 주는 피해 증가 (최대 +40%)",
+                Desc = "받는 피해 +5%, 매 합 시작 시 잃은 체력 비율만큼 주는 피해 증가 (최대 +80%)",
                 Setup = (b, u) =>
                 {
-                    b.AddMod(u, ModKey.Taken, 0.1, Inf, "주화입마 대가");
-                    u.RoundStart.Add(() => b.AddMod(u, ModKey.Dealt, 0.4 * (1 - (double)u.Hp / u.MaxHp), Inf, "주화입마"));
+                    b.AddMod(u, ModKey.Taken, 0.05, Inf, "주화입마 대가");
+                    u.RoundStart.Add(() => b.AddMod(u, ModKey.Dealt, 0.8 * (1 - (double)u.Hp / u.MaxHp), Inf, "주화입마"));
                 } },
             new SkillDef { Id = "idok", Name = "이독공독", Type = SkillType.Active, Rate = 40,
                 Desc = "체력 비율이 가장 낮은 아군 회복 (계수 80%) + 적 1명 중독(2합, 매 합 내공 피해 40%)",
@@ -431,16 +431,16 @@ namespace MartialTactics.Battle
                     foreach (var t in b.PickEnemies(u, 1)) b.AddStatus(u, t, StatusKind.Poison, 2, new Dot(DamageKind.Int, 0.4));
                 } },
             new SkillDef { Id = "gujeol", Name = "구절편", Type = SkillType.Active, Rate = 35,
-                Desc = "적 2명에게 무기 피해 80%, 그중 1명 무장해제(1합)",
+                Desc = "적 2명에게 무기 피해 60%, 그중 1명 무장해제(1합)",
                 Cast = (b, u, _) =>
                 {
                     var ts = b.PickEnemies(u, 2);
-                    foreach (var t in ts) b.Damage(u, t, DamageKind.Ext, 0.8, "구절편");
+                    foreach (var t in ts) b.Damage(u, t, DamageKind.Ext, 0.6, "구절편");
                     if (ts.Count > 0) b.AddStatus(u, ts[0], StatusKind.Disarm, 1);
                 } },
             new SkillDef { Id = "cheonmaryeong", Name = "천마령", Type = SkillType.Aura,
-                Desc = "1~3합 동안 아군 전체 경공 +15%",
-                Setup = (b, u) => { foreach (var a in b.Allies(u)) b.AddMod(a, ModKey.Spd, 0.15, 3, "천마령"); } },
+                Desc = "1~3합 동안 아군 전체 경공 +25%",
+                Setup = (b, u) => { foreach (var a in b.Allies(u)) b.AddMod(a, ModKey.Spd, 0.25, 3, "천마령"); } },
             new SkillDef { Id = "hopyo", Name = "호표", Type = SkillType.Passive,
                 Desc = "아군 주장이 받는 피해의 25%를 대신 받고, 대신 받을 때 30% 확률로 반격 (무기 피해 80%). 자신이 주장이면 효과 없음",
                 Setup = (b, u) =>
@@ -467,12 +467,12 @@ namespace MartialTactics.Battle
                     if (t != null) { b.Damage(u, t, DamageKind.Ext, 1.2, "사인선사마"); b.AddMod(t, ModKey.Dealt, -0.15, 2, "사인선사마"); }
                 } },
             new SkillDef { Id = "mumyeong", Name = "무명검", Type = SkillType.Aura,
-                Desc = "준비 합에 적 1명을 표적으로 정해, 그 적에게 주는 피해 +25%",
+                Desc = "준비 합에 적 1명을 표적으로 정해, 그 적에게 주는 피해 +55%",
                 Setup = (b, u) =>
                 {
                     var t = b.PickEnemies(u, 1).FirstOrDefault();
                     if (t == null) return;
-                    u.Mark = t; u.MarkBonus = 0.25;
+                    u.Mark = t; u.MarkBonus = 0.55;
                     b.Log($"{b.Tag(u)}의 무명검: {b.Tag(t)}를 표적으로 정함");
                 } },
             new SkillDef { Id = "gyeokgong", Name = "격공점혈", Type = SkillType.Active, Rate = 35,
@@ -509,87 +509,87 @@ namespace MartialTactics.Battle
 
         public static readonly List<UnitDef> Units = new List<UnitDef>
         {
-            U("baek", "백무진", "청운검주", "정파", 3000, 150, 205, 120, 160, "SABAB", "cheongun"),
-            U("seol", "설지향", "화산의선", "정파", 2800, 90, 190, 110, 150, "ABBSA", "saengsaeng"),
-            U("hye", "혜법", "금강권승", "정파", 3600, 170, 120, 200, 95, "ABSCB", "geumgang"),
-            U("hyeol", "혈영마군", "혈마전인", "마교", 3000, 220, 110, 130, 140, "BASCS", "hyeolma"),
-            U("dok", "독수귀녀", "만독곡주", "마교", 2700, 80, 200, 100, 175, "CBASA", "mandok", 5),
-            U("cheol", "철갑마웅", "흑풍당주", "마교", 3800, 160, 90, 210, 85, "BASBA", "cheolbyeok", 5),
-            U("namgung", "남궁휘", "창궁검룡", "정파", 3000, 195, 130, 140, 170, "SABBA", "changgung"),
-            U("dang", "당소소", "암기천후", "정파", 2700, 185, 140, 100, 185, "ASBAB", "mancheon"),
-            U("nameless", "무명도객", "낭인", "사파", 3200, 210, 80, 150, 130, "SBABA", "ildo"),
+            U("baek", "백무진", "청운검주", "정파", 2520, 127, 173, 101, 160, "SABAB", "cheongun"),
+            U("seol", "설지향", "화산의선", "정파", 2820, 91, 191, 111, 150, "ABBSA", "saengsaeng"),
+            U("hye", "혜법", "금강권승", "정파", 3110, 147, 103, 173, 95, "ABSCB", "geumgang"),
+            U("hyeol", "혈영마군", "혈마전인", "마교", 2540, 186, 93, 110, 140, "BASCS", "hyeolma"),
+            U("dok", "독수귀녀", "만독곡주", "마교", 3180, 94, 235, 118, 175, "CBASA", "mandok", 5),
+            U("cheol", "철갑마웅", "흑풍당주", "마교", 3140, 132, 74, 174, 85, "BASBA", "cheolbyeok", 5),
+            U("namgung", "남궁휘", "창궁검룡", "정파", 2400, 156, 104, 112, 170, "SABBA", "changgung"),
+            U("dang", "당소소", "암기천후", "정파", 2420, 166, 126, 89, 185, "ASBAB", "mancheon"),
+            U("nameless", "무명도객", "낭인", "사파", 2570, 169, 65, 121, 130, "SBABA", "ildo"),
             U("cheongheo", "청허진인", "무당장문", "정파", 3200, 110, 170, 170, 120, "ABSAB", "samjae", 6),
-            U("jin", "진세악", "종남검수", "정파", 3000, 175, 140, 140, 150, "SABBA", "bukdu"),
-            U("jeongyeon", "정연", "아미신니", "정파", 2800, 90, 185, 120, 155, "BABSA", "cheongsim"),
-            U("gongjin", "공진", "나한당주", "정파", 3500, 160, 150, 190, 100, "BASCA", "saja", 5),
-            U("ma", "마천우", "귀영수", "사파", 2700, 170, 130, 100, 190, "ASBAB", "jeomhyeol"),
-            U("guyang", "구양철", "철장방주", "사파", 3200, 190, 150, 150, 120, "BAABS", "naesang", 5),
-            U("yeon", "연소백", "쾌검랑", "사파", 2900, 200, 100, 120, 185, "SABCB", "gwangpung"),
-            U("maeng", "맹악", "흑수장군", "마교", 3600, 150, 110, 200, 90, "BBSAB", "bantan"),
-            U("hahu", "하후빈", "산공노조", "마교", 2800, 100, 190, 110, 160, "CBASA", "sangong"),
-            U("so", "소요령", "섭혼마녀", "마교", 2700, 90, 210, 100, 170, "CBBSA", "seophon"),
-            U("songhak", "송학", "녹림군사", "사파", 3000, 120, 175, 140, 145, "ASBBC", "cheongryong"),
+            U("jin", "진세악", "종남검수", "정파", 2720, 158, 127, 127, 150, "SABBA", "bukdu"),
+            U("jeongyeon", "정연", "아미신니", "정파", 3150, 101, 209, 135, 155, "BABSA", "cheongsim"),
+            U("gongjin", "공진", "나한당주", "정파", 3430, 157, 147, 186, 100, "BASCA", "saja", 5),
+            U("ma", "마천우", "귀영수", "사파", 2550, 161, 123, 95, 190, "ASBAB", "jeomhyeol"),
+            U("guyang", "구양철", "철장방주", "사파", 3170, 189, 148, 148, 120, "BAABS", "naesang", 5),
+            U("yeon", "연소백", "쾌검랑", "사파", 2580, 178, 89, 106, 185, "SABCB", "gwangpung"),
+            U("maeng", "맹악", "흑수장군", "마교", 3380, 141, 103, 188, 90, "BBSAB", "bantan"),
+            U("hahu", "하후빈", "산공노조", "마교", 3230, 115, 219, 127, 160, "CBASA", "sangong"),
+            U("so", "소요령", "섭혼마녀", "마교", 3170, 106, 247, 117, 170, "CBBSA", "seophon"),
+            U("songhak", "송학", "녹림군사", "사파", 3340, 133, 195, 155, 145, "ASBBC", "cheongryong"),
             U("moyong", "모용상", "모용세가주", "정파", 3200, 130, 180, 160, 130, "BACSB", "hyeonmu", 6),
-            U("jeokyeom", "적염후", "주작당주", "마교", 3000, 170, 160, 130, 140, "BCBAS", "jujak", 5),
-            U("paeng", "팽무혁", "하북도왕", "정파", 3100, 215, 90, 140, 160, "SBABC", "jikdo"),
-            U("sahyeol", "사혈귀", "혈수당주", "마교", 2900, 200, 100, 120, 175, "BSACA", "talmyeong", 5),
-            U("jangsam", "장삼", "금나귀수", "사파", 3000, 180, 120, 140, 165, "ABSBA", "geumna"),
-            U("cheolwi", "철위강", "호위대장", "정파", 3800, 140, 100, 210, 90, "BBSAA", "howi"),
-            U("moyongyeon", "모용연", "두전성이 전인", "정파", 3000, 120, 195, 140, 150, "ABBSA", "dujeon"),
-            U("dokgo", "독고패", "낭인검귀", "사파", 3100, 205, 110, 130, 155, "SABCB", "sajung"),
-            U("baengni", "백리청", "의협", "정파", 3100, 190, 130, 140, 145, "ASBBA", "hyeolmaek"),
-            U("jegal", "제갈운", "신의", "정파", 2800, 80, 190, 120, 140, "ABASB", "hoechun"),
-            // 출시 무인 50명 (스탯은 역할별 임시값, 밸런스 때 시뮬레이터로 정함)
-            U("jimyeong", "지명", "소림 지자배 승려", "정파", 3400, 145, 105, 195, 100, "BCSBA", "sorimgon"),
-            U("wonsosam", "원소삼", "삼결 걸개", "정파", 3000, 170, 140, 135, 150, "CSBAB", "yeonhwarak"),
-            U("danorang", "단오랑", "취권 여개", "정파", 2900, 190, 105, 115, 180, "ABCSB", "chwigwon"),
-            U("mokunbi", "목운비", "곤륜신행", "정파", 2700, 180, 115, 105, 190, "CSBAB", "dapseol"),
-            U("dojungak", "도중악", "공동철권", "정파", 3100, 195, 110, 145, 140, "BCSBA", "tongbae"),
-            U("yeopcheong", "엽청", "점창쾌검", "정파", 2900, 190, 105, 115, 180, "SBABC", "sipgubong"),
-            U("haunhak", "하운학", "청성검객", "정파", 2700, 85, 200, 105, 160, "ABCSB", "cheonsa"),
-            U("seokhaerang", "석해랑", "해남검수", "정파", 3100, 195, 110, 145, 140, "ABCSB", "nodo"),
-            U("hwangboyeol", "황보열", "황보세가 소가주", "정파", 3360, 210, 110, 160, 140, "SBABC", "dogeom", 4),
-            U("akjinmyeong", "악진명", "악가창수", "정파", 3000, 190, 115, 140, 145, "SBABC", "yukhap"),
-            U("eonseoyeon", "언서연", "언가권녀", "정파", 3100, 195, 110, 145, 140, "BCSBA", "bunggwon"),
-            U("cheongyangja", "청양자", "전진도사", "정파", 3000, 105, 180, 130, 140, "SBABC", "chilseong"),
-            U("yusocheong", "유소청", "형산검녀", "정파", 2900, 165, 145, 130, 155, "BABCS", "namak"),
-            U("gwakjin", "곽진", "숭산검수", "정파", 3100, 195, 110, 145, 140, "BCSBA", "jungak"),
-            U("wijagyeong", "위자경", "항산제자", "정파", 3600, 155, 95, 205, 90, "BCSBA", "bugak"),
-            U("notaegyeong", "노태경", "태산권사", "정파", 3000, 190, 115, 140, 145, "BCSBA", "cheolsa"),
-            U("jangbuun", "장부운", "모산도사", "정파", 2800, 90, 195, 110, 155, "ABCSB", "mosan"),
-            U("maenggwan", "맹관", "검각수문검", "정파", 3600, 155, 95, 205, 90, "SBABC", "ilbu"),
-            U("soyuk", "소육", "하오문 정보꾼", "사파", 2700, 180, 115, 105, 190, "CSBAB", "sujeon"),
-            U("hongmae", "홍매", "기루 주인", "사파", 2800, 90, 195, 110, 155, "ABCSB", "mihon"),
-            U("noesam", "뇌삼", "객잔 점소이", "사파", 2900, 190, 105, 115, 180, "CSBAB", "juwi"),
-            U("udaeho", "우대호", "녹림 도부수", "사파", 3000, 190, 115, 140, 145, "BABCS", "sampan"),
-            U("jinryeong", "진령", "녹림 궁수", "사파", 2800, 185, 110, 110, 185, "CSBAB", "yeonju"),
-            U("isam", "이삼", "장강수귀", "사파", 3100, 175, 135, 140, 145, "ABCSB", "nangri"),
-            U("suyeon", "수연", "장강비연", "사파", 2700, 180, 115, 105, 190, "SBABC", "biyeon"),
-            U("gangil", "강일", "철노 수적", "사파", 3000, 170, 140, 135, 150, "CSBAB", "jegalno"),
-            U("chilho", "칠호", "살막 칠호", "사파", 2900, 190, 105, 115, 180, "SBABC", "dogung"),
-            U("heukjeop", "흑접", "살막 흑접", "사파", 2700, 180, 115, 105, 190, "ABCSB", "maehwa"),
-            U("muyeong", "무영", "살막 무영", "사파", 2940, 195, 115, 115, 195, "SBABC", "jamyeong", 4),
-            U("gowol", "고월", "월하낭인", "사파", 3200, 200, 105, 150, 135, "BABCS", "wolha"),
-            U("jobaek", "조백", "현상 사냥꾼", "사파", 2900, 165, 145, 130, 155, "BCSBA", "poseung"),
-            U("yongcheonho", "용천호", "청룡당 창수", "마교", 3100, 195, 110, 145, 140, "CSBAB", "changnyong"),
-            U("cheongrin", "청린", "청룡당 쌍검녀", "마교", 2900, 190, 105, 115, 180, "CSBAB", "wonang"),
-            U("baekcheolsan", "백철산", "백호당 도객", "마교", 3000, 190, 115, 140, 145, "SBABC", "maengho"),
-            U("baeksogyo", "백소교", "백호당 조법녀", "마교", 2800, 185, 110, 110, 185, "SBABC", "hojo"),
-            U("gugap", "구갑", "현무당 방패수", "마교", 3600, 155, 95, 205, 90, "BCSBA", "deungpae"),
-            U("dunsan", "둔산", "현무당 철퇴수", "마교", 3400, 145, 105, 195, 100, "BCSBA", "yuseong"),
-            U("gwaksam", "곽삼", "천마 광도", "마교", 3100, 195, 110, 145, 140, "BABCS", "juhwa"),
-            U("yuhwa", "유화", "마교 약녀", "마교", 3000, 105, 180, 130, 140, "ABCSB", "idok"),
-            U("yeonbi", "연비", "소마녀", "마교", 2900, 165, 145, 130, 155, "BABCS", "gujeol"),
-            U("heukui", "흑의사자", "천마령 전령", "마교", 2900, 100, 185, 125, 145, "ABCSB", "cheonmaryeong"),
-            U("jangwiwon", "장위원", "진원표국 표두", "신비", 3780, 165, 100, 215, 95, "BCSBA", "hopyo", 4),
-            U("jeonsoho", "전소호", "표사", "신비", 2900, 165, 145, 130, 155, "CSBAB", "jinwon"),
-            U("haryeong", "하령", "여표사", "신비", 2800, 185, 110, 110, 185, "CSBAB", "sain"),
-            U("bokmyeon", "복면객", "정체불명의 복면객", "신비", 3200, 200, 105, 150, 135, "SBABC", "mumyeong"),
-            U("hoeui", "회의집사", "회의 집사", "신비", 2700, 85, 200, 105, 160, "ABCSB", "gyeokgong"),
-            U("eunmyeon", "은면여인", "은가면 여인", "신비", 2800, 90, 195, 110, 155, "BABCS", "sipmyeon"),
-            U("wangdaega", "왕대가", "객잔 숙수", "신비", 3200, 200, 105, 150, 135, "BABCS", "pojeong"),
-            U("nocho", "노초", "나루터 뱃사공", "신비", 3400, 145, 105, 195, 100, "ABCSB", "sunsu"),
-            U("sana", "산아", "약초꾼 소녀", "신비", 2900, 100, 185, 125, 145, "CSBAB", "sinnong"),
+            U("jeokyeom", "적염후", "주작당주", "마교", 3530, 200, 188, 153, 140, "BCBAS", "jujak", 5),
+            U("paeng", "팽무혁", "하북도왕", "정파", 2500, 173, 73, 113, 160, "SBABC", "jikdo"),
+            U("sahyeol", "사혈귀", "혈수당주", "마교", 2880, 199, 99, 120, 175, "BSACA", "talmyeong", 5),
+            U("jangsam", "장삼", "금나귀수", "사파", 2740, 165, 110, 128, 165, "ABSBA", "geumna"),
+            U("cheolwi", "철위강", "호위대장", "정파", 3500, 129, 92, 194, 90, "BBSAA", "howi"),
+            U("moyongyeon", "모용연", "두전성이 전인", "정파", 2940, 118, 191, 137, 150, "ABBSA", "dujeon"),
+            U("dokgo", "독고패", "낭인검귀", "사파", 2630, 174, 93, 110, 155, "SABCB", "sajung"),
+            U("baengni", "백리청", "의협", "정파", 2780, 170, 116, 125, 145, "ASBBA", "hyeolmaek"),
+            U("jegal", "제갈운", "신의", "정파", 3010, 86, 204, 129, 140, "ABASB", "hoechun"),
+            // 출시 무인 50명
+            U("jimyeong", "지명", "소림 지자배 승려", "정파", 3010, 128, 93, 173, 100, "BCSBA", "sorimgon"),
+            U("wonsosam", "원소삼", "삼결 걸개", "정파", 2720, 155, 127, 122, 150, "CSBAB", "yeonhwarak"),
+            U("danorang", "단오랑", "취권 여개", "정파", 2580, 169, 93, 103, 180, "ABCSB", "chwigwon"),
+            U("mokunbi", "목운비", "곤륜신행", "정파", 2680, 178, 114, 104, 190, "CSBAB", "dapseol"),
+            U("dojungak", "도중악", "공동철권", "정파", 2730, 171, 96, 128, 140, "BCSBA", "tongbae"),
+            U("yeopcheong", "엽청", "점창쾌검", "정파", 2520, 165, 91, 100, 180, "SBABC", "sipgubong"),
+            U("haunhak", "하운학", "청성검객", "정파", 2880, 91, 214, 112, 160, "ABCSB", "cheonsa"),
+            U("seokhaerang", "석해랑", "해남검수", "정파", 2710, 170, 96, 127, 140, "ABCSB", "nodo"),
+            U("hwangboyeol", "황보열", "황보세가 소가주", "정파", 2740, 172, 90, 131, 140, "SBABC", "dogeom", 4),
+            U("akjinmyeong", "악진명", "악가창수", "정파", 2610, 165, 101, 122, 145, "SBABC", "yukhap"),
+            U("eonseoyeon", "언서연", "언가권녀", "정파", 2730, 172, 97, 128, 140, "BCSBA", "bunggwon"),
+            U("cheongyangja", "청양자", "전진도사", "정파", 3030, 106, 181, 131, 140, "SBABC", "chilseong"),
+            U("yusocheong", "유소청", "형산검녀", "정파", 2670, 152, 133, 120, 155, "BABCS", "namak"),
+            U("gwakjin", "곽진", "숭산검수", "정파", 2770, 174, 98, 129, 140, "BCSBA", "jungak"),
+            U("wijagyeong", "위자경", "항산제자", "정파", 3150, 136, 83, 180, 90, "BCSBA", "bugak"),
+            U("notaegyeong", "노태경", "태산권사", "정파", 2640, 167, 102, 123, 145, "BCSBA", "cheolsa"),
+            U("jangbuun", "장부운", "모산도사", "정파", 2930, 94, 205, 115, 155, "ABCSB", "mosan"),
+            U("maenggwan", "맹관", "검각수문검", "정파", 3200, 138, 85, 182, 90, "SBABC", "ilbu"),
+            U("soyuk", "소육", "하오문 정보꾼", "사파", 2670, 178, 113, 103, 190, "CSBAB", "sujeon"),
+            U("hongmae", "홍매", "기루 주인", "사파", 2920, 94, 203, 115, 155, "ABCSB", "mihon"),
+            U("noesam", "뇌삼", "객잔 점소이", "사파", 2780, 182, 100, 110, 180, "CSBAB", "juwi"),
+            U("udaeho", "우대호", "녹림 도부수", "사파", 2700, 172, 104, 126, 145, "BABCS", "sampan"),
+            U("jinryeong", "진령", "녹림 궁수", "사파", 2650, 176, 104, 104, 185, "CSBAB", "yeonju"),
+            U("isam", "이삼", "장강수귀", "사파", 2850, 161, 124, 128, 145, "ABCSB", "nangri"),
+            U("suyeon", "수연", "장강비연", "사파", 2600, 174, 110, 101, 190, "SBABC", "biyeon"),
+            U("gangil", "강일", "철노 수적", "사파", 2860, 162, 134, 129, 150, "CSBAB", "jegalno"),
+            U("chilho", "칠호", "살막 칠호", "사파", 2550, 167, 92, 101, 180, "SBABC", "dogung"),
+            U("heukjeop", "흑접", "살막 흑접", "사파", 2720, 182, 116, 106, 190, "ABCSB", "maehwa"),
+            U("muyeong", "무영", "살막 무영", "사파", 3080, 204, 121, 121, 195, "SBABC", "jamyeong", 4),
+            U("gowol", "고월", "월하낭인", "사파", 3090, 194, 101, 145, 135, "BABCS", "wolha"),
+            U("jobaek", "조백", "현상 사냥꾼", "사파", 2890, 164, 145, 130, 155, "BCSBA", "poseung"),
+            U("yongcheonho", "용천호", "청룡당 창수", "마교", 2820, 177, 100, 132, 140, "CSBAB", "changnyong"),
+            U("cheongrin", "청린", "청룡당 쌍검녀", "마교", 2630, 172, 95, 104, 180, "CSBAB", "wonang"),
+            U("baekcheolsan", "백철산", "백호당 도객", "마교", 2670, 169, 102, 125, 145, "SBABC", "maengho"),
+            U("baeksogyo", "백소교", "백호당 조법녀", "마교", 2560, 169, 100, 100, 185, "SBABC", "hojo"),
+            U("gugap", "구갑", "현무당 방패수", "마교", 3270, 141, 86, 186, 90, "BCSBA", "deungpae"),
+            U("dunsan", "둔산", "현무당 철퇴수", "마교", 3100, 132, 95, 177, 100, "BCSBA", "yuseong"),
+            U("gwaksam", "곽삼", "천마 광도", "마교", 3030, 190, 108, 141, 140, "BABCS", "juhwa"),
+            U("yuhwa", "유화", "마교 약녀", "마교", 3030, 106, 182, 131, 140, "ABCSB", "idok"),
+            U("yeonbi", "연비", "소마녀", "마교", 2680, 153, 134, 120, 155, "BABCS", "gujeol"),
+            U("heukui", "흑의사자", "천마령 전령", "마교", 3410, 118, 217, 147, 145, "ABCSB", "cheonmaryeong"),
+            U("jangwiwon", "장위원", "진원표국 표두", "신비", 3370, 147, 89, 192, 95, "BCSBA", "hopyo", 4),
+            U("jeonsoho", "전소호", "표사", "신비", 2770, 158, 139, 125, 155, "CSBAB", "jinwon"),
+            U("haryeong", "하령", "여표사", "신비", 2700, 178, 106, 106, 185, "CSBAB", "sain"),
+            U("bokmyeon", "복면객", "정체불명의 복면객", "신비", 2940, 184, 97, 138, 135, "SBABC", "mumyeong"),
+            U("hoeui", "회의집사", "회의 집사", "신비", 3120, 98, 231, 122, 160, "ABCSB", "gyeokgong"),
+            U("eunmyeon", "은면여인", "은가면 여인", "신비", 2890, 93, 201, 113, 155, "BABCS", "sipmyeon"),
+            U("wangdaega", "왕대가", "객잔 숙수", "신비", 2770, 174, 91, 130, 135, "BABCS", "pojeong"),
+            U("nocho", "노초", "나루터 뱃사공", "신비", 3280, 140, 101, 188, 100, "ABCSB", "sunsu"),
+            U("sana", "산아", "약초꾼 소녀", "신비", 3150, 109, 201, 136, 145, "CSBAB", "sinnong"),
         };
 
         public static readonly Dictionary<string, UnitDef> Unit = Units.ToDictionary(u => u.Id);
