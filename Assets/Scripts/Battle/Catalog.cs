@@ -22,11 +22,12 @@ namespace MartialTactics.Battle
         public Action<BattleEngine, Unit, Unit> Cast;
     }
 
-    /// <summary>무인 정의. Hp = 체력, Spd = 경공, Apt = 금목토수화 순서의 적성, Skill = 자기 무공(무공창 1칸).</summary>
+    /// <summary>무인 정의. Hp = 체력, Spd = 경공, Apt = 금목토수화 순서의 적성, Skill = 자기 무공(무공창 1칸), Stars = 등급(별 개수).</summary>
     public sealed class UnitDef
     {
         public string Id, Name, Title, Faction, Apt, Skill;
         public int Hp, Ext, Int, Def, Spd;
+        public int Stars = 3;
     }
 
     /// <summary>
@@ -240,9 +241,9 @@ namespace MartialTactics.Battle
 
         public static readonly Dictionary<string, SkillDef> Skill = Skills.ToDictionary(s => s.Id);
 
-        static UnitDef U(string id, string name, string title, string faction, int hp, int ext, int @int, int def, int spd, string apt, string skill)
+        static UnitDef U(string id, string name, string title, string faction, int hp, int ext, int @int, int def, int spd, string apt, string skill, int stars = 3)
         {
-            return new UnitDef { Id = id, Name = name, Title = title, Faction = faction, Hp = hp, Ext = ext, Int = @int, Def = def, Spd = spd, Apt = apt, Skill = skill };
+            return new UnitDef { Id = id, Name = name, Title = title, Faction = faction, Hp = hp, Ext = ext, Int = @int, Def = def, Spd = spd, Apt = apt, Skill = skill, Stars = stars };
         }
 
         public static readonly List<UnitDef> Units = new List<UnitDef>
@@ -251,26 +252,26 @@ namespace MartialTactics.Battle
             U("seol", "설지향", "화산의선", "정파", 2800, 90, 190, 110, 150, "ABBSA", "saengsaeng"),
             U("hye", "혜법", "금강권승", "정파", 3600, 170, 120, 200, 95, "ABSCB", "geumgang"),
             U("hyeol", "혈영마군", "혈마전인", "마교", 3000, 220, 110, 130, 140, "BASCS", "hyeolma"),
-            U("dok", "독수귀녀", "만독곡주", "마교", 2700, 80, 200, 100, 175, "CBASA", "mandok"),
-            U("cheol", "철갑마웅", "흑풍당주", "마교", 3800, 160, 90, 210, 85, "BASBA", "cheolbyeok"),
+            U("dok", "독수귀녀", "만독곡주", "마교", 2700, 80, 200, 100, 175, "CBASA", "mandok", 5),
+            U("cheol", "철갑마웅", "흑풍당주", "마교", 3800, 160, 90, 210, 85, "BASBA", "cheolbyeok", 5),
             U("namgung", "남궁휘", "창궁검룡", "세가", 3000, 195, 130, 140, 170, "SABBA", "changgung"),
             U("dang", "당소소", "암기천후", "세가", 2700, 185, 140, 100, 185, "ASBAB", "mancheon"),
             U("nameless", "무명도객", "낭인", "사파", 3200, 210, 80, 150, 130, "SBABA", "ildo"),
-            U("cheongheo", "청허진인", "무당장문", "정파", 3200, 110, 170, 170, 120, "ABSAB", "samjae"),
+            U("cheongheo", "청허진인", "무당장문", "정파", 3200, 110, 170, 170, 120, "ABSAB", "samjae", 6),
             U("jin", "진세악", "종남검수", "정파", 3000, 175, 140, 140, 150, "SABBA", "bukdu"),
             U("jeongyeon", "정연", "아미신니", "정파", 2800, 90, 185, 120, 155, "BABSA", "cheongsim"),
-            U("gongjin", "공진", "나한당주", "정파", 3500, 160, 150, 190, 100, "BASCA", "saja"),
+            U("gongjin", "공진", "나한당주", "정파", 3500, 160, 150, 190, 100, "BASCA", "saja", 5),
             U("ma", "마천우", "귀영수", "사파", 2700, 170, 130, 100, 190, "ASBAB", "jeomhyeol"),
-            U("guyang", "구양철", "철장방주", "사파", 3200, 190, 150, 150, 120, "BAABS", "naesang"),
+            U("guyang", "구양철", "철장방주", "사파", 3200, 190, 150, 150, 120, "BAABS", "naesang", 5),
             U("yeon", "연소백", "쾌검랑", "사파", 2900, 200, 100, 120, 185, "SABCB", "gwangpung"),
             U("maeng", "맹악", "흑수장군", "마교", 3600, 150, 110, 200, 90, "BBSAB", "bantan"),
             U("hahu", "하후빈", "산공노조", "마교", 2800, 100, 190, 110, 160, "CBASA", "sangong"),
             U("so", "소요령", "섭혼마녀", "마교", 2700, 90, 210, 100, 170, "CBBSA", "seophon"),
             U("songhak", "송학", "녹림군사", "사파", 3000, 120, 175, 140, 145, "ASBBC", "cheongryong"),
-            U("moyong", "모용상", "모용세가주", "세가", 3200, 130, 180, 160, 130, "BACSB", "hyeonmu"),
-            U("jeokyeom", "적염후", "주작당주", "마교", 3000, 170, 160, 130, 140, "BCBAS", "jujak"),
+            U("moyong", "모용상", "모용세가주", "세가", 3200, 130, 180, 160, 130, "BACSB", "hyeonmu", 6),
+            U("jeokyeom", "적염후", "주작당주", "마교", 3000, 170, 160, 130, 140, "BCBAS", "jujak", 5),
             U("paeng", "팽무혁", "하북도왕", "세가", 3100, 215, 90, 140, 160, "SBABC", "jikdo"),
-            U("sahyeol", "사혈귀", "혈수당주", "마교", 2900, 200, 100, 120, 175, "BSACA", "talmyeong"),
+            U("sahyeol", "사혈귀", "혈수당주", "마교", 2900, 200, 100, 120, 175, "BSACA", "talmyeong", 5),
             U("jangsam", "장삼", "금나귀수", "사파", 3000, 180, 120, 140, 165, "ABSBA", "geumna"),
             U("cheolwi", "철위강", "호위대장", "세가", 3800, 140, 100, 210, 90, "BBSAA", "howi"),
             U("moyongyeon", "모용연", "두전성이 전인", "세가", 3000, 120, 195, 140, 150, "ABBSA", "dujeon"),

@@ -29,20 +29,22 @@ namespace MartialTactics.Game
         public OwnedUnit Find(string id) => Data.Units.FirstOrDefault(u => u.Id == id);
         public ExtractedSkill FindSkill(int uid) => Data.Skills.FirstOrDefault(s => s.Uid == uid);
 
-        // 임시: 무인별 등급이 아직 없어서 전부 3성(삼류)
-        public static int Stars(string unitId) => 3;
+        public static int Stars(string unitId) => Catalog.Unit[unitId].Stars;
 
-        public static string Rank(int stars) => stars == 3 ? "삼류" : stars == 4 ? "이류" : stars == 5 ? "일류" : "";
+        public static string Rank(int stars) => stars == 3 ? "삼류" : stars == 4 ? "이류" : stars == 5 ? "일류" : stars == 6 ? "절정" : "";
+
+        /// <summary>뽑기에 나오는 무인. 6성 절정은 확장 패치 전까지 뺀다.</summary>
+        public static readonly List<UnitDef> DrawPool = Catalog.Units.Where(u => u.Stars <= 5).ToList();
 
         // --- 뽑기 ---
 
-        // 임시: 등급이 하나뿐이라 전체 무인 균등 확률
+        // 임시: 등급별 확률이 아직 없어서 뽑기 대상 무인 균등 확률
         public List<DrawResult> Draw(int count)
         {
             var results = new List<DrawResult>();
             for (int i = 0; i < count; i++)
             {
-                var def = Catalog.Units[rng.Next(Catalog.Units.Count)];
+                var def = DrawPool[rng.Next(DrawPool.Count)];
                 var own = Find(def.Id);
                 if (own == null) Data.Units.Add(new OwnedUnit { Id = def.Id });
                 else own.Spare++;
@@ -111,7 +113,7 @@ namespace MartialTactics.Game
             var d = Catalog.Unit[u.Id];
             return new UnitDef
             {
-                Id = d.Id, Name = d.Name, Title = d.Title, Faction = d.Faction, Apt = d.Apt, Skill = d.Skill, Hp = d.Hp,
+                Id = d.Id, Name = d.Name, Title = d.Title, Faction = d.Faction, Apt = d.Apt, Skill = d.Skill, Hp = d.Hp, Stars = d.Stars,
                 Ext = d.Ext + u.Added[(int)StatKind.Ext], Int = d.Int + u.Added[(int)StatKind.Int],
                 Def = d.Def + u.Added[(int)StatKind.Def], Spd = d.Spd + u.Added[(int)StatKind.Spd],
             };
