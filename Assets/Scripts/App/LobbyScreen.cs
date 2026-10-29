@@ -109,24 +109,22 @@ namespace MartialTactics.App
             var right = Ui.El("fp-side");
             right.Add(DeckCard(app, 1), DeckCard(app, 2));
 
+            // 가운데: 대장간 Lv(레벨 창) · 남은 철광석 · 쌓인 장비(결과 창) · Auto(자동 뽑기). 뽑기 단추는 하단 바 가운데
             var mid = Ui.El("fp-mid");
-            var lv = new Button(app.OpenForgeLevel) { text = $"Lv {Ui.N}" };
+            var lv = new Button(app.OpenForgeLevel) { text = $"대장간 Lv {Ui.N}" };
             lv.AddToClassList("forge-lv");
             mid.Add(lv);
-            var forge = new Button();
-            forge.AddToClassList("forge");
-            forge.Add(Ui.Item(Icon.Kind.Forge, 66));
-            mid.Add(forge);
             var ore = Ui.El("forge-ore");
-            ore.Add(Ui.Item(Icon.Kind.Ore, 14), Ui.Lb(Ui.N, "fo-n"));
+            ore.Add(Ui.Item(Icon.Kind.Ore, 16), Ui.Lb(Ui.N, "fo-n"));
             mid.Add(ore);
+            var row = Ui.El("row", "fp-btns");
             var stack = new Button(app.OpenForgeResult) { text = $"{Ui.N}개" };
             stack.AddToClassList("forge-stack");
-            mid.Add(stack);
             var auto = new Button(() => app.OpenSheet(LobbySheet.ForgeAuto));
             auto.AddToClassList("forge-auto");
             auto.Add(Ui.Lb("Auto", "fa-t"));
-            mid.Add(auto);
+            row.Add(stack, auto);
+            mid.Add(row);
 
             panel.Add(left, mid, right);
             return panel;
@@ -168,8 +166,17 @@ namespace MartialTactics.App
                 // 다섯 칸의 너비·아이콘 크기·위치는 어느 화면에서나 같다. 고른 칸은 테두리 색과 아래 이름만 달라진다
                 if (t.tab == LobbyTab.None)
                 {
+                    // 가운데 칸도 다른 칸과 같은 크기: 로비에서는 대장간(누르면 한 번 뽑기), 탭을 열면 닫기
                     var center = Ui.El("tb", "center");
                     if (app.Tab != LobbyTab.None) center.Add(Ui.IconBtn(Icon.Kind.Close, app.CloseTab, 26, "x"));
+                    else
+                    {
+                        var forge = new Button();
+                        forge.AddToClassList("medal");
+                        forge.AddToClassList("forge-medal");
+                        forge.Add(Ui.Item(Icon.Kind.Forge, 40));
+                        center.Add(forge);
+                    }
                     nav.Add(center);
                     continue;
                 }

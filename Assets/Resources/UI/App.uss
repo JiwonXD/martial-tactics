@@ -663,3 +663,14 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .btn, .ptitle, .title, .sheet-title, .ch-t, .bt-name, .ribbon-t, .draw-name, .go-t, .uname, .plv, .verdict, .tbn, .lv { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
 .round { white-space: nowrap; }
 .banner-title { padding: 4px 12px; border-radius: 10px; background-color: rgba(11, 26, 27, 0.78); }
+
+/* 로비 하단 바 가운데 = 대장간 단추 (다른 칸과 같은 52px 원판), 대장간 패널 가운데는 Lv · 철광석 · 쌓인 장비 · Auto */
+.forge-medal { margin: 0; padding: 0; border-color: #f0832b; background-color: #2c6360; }
+.forge-panel { height: 140px; }
+.fp-mid { width: 116px; height: auto; align-items: center; justify-content: center; }
+.fp-mid > .forge-lv { position: relative; top: 0; }
+.fp-mid > .forge-ore { position: relative; right: 0; top: 0; margin-top: 8px; }
+.fp-btns { margin-top: 8px; }
+.fp-btns > .forge-stack { position: relative; left: 0; top: 0; min-height: 28px; margin-right: 4px; }
+.fp-btns > .forge-auto { position: relative; left: 0; bottom: 0; min-height: 28px; }
+.tb.center > .x { border-radius: 26px; }
