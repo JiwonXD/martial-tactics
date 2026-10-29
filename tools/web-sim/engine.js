@@ -43,12 +43,12 @@
 
   const SKILLS = [
     { id: 'cheongun', name: '청운검기', type: 'active', rate: 35,
-      desc: '적 전체에게 내공 피해 90%',
-      cast: (b, u) => b.pickEnemies(u, 3).forEach(t => b.damage(u, t, 'int', 0.9, '청운검기')) },
+      desc: '적 전체에게 내공 피해 80%',
+      cast: (b, u) => b.pickEnemies(u, 3).forEach(t => b.damage(u, t, 'int', 0.8, '청운검기')) },
     { id: 'saengsaeng', name: '생생조화신공', type: 'aura',
-      desc: '1~4합 동안 매 합 시작 시 아군 전체 회복 (계수 50%)',
+      desc: '1~4합 동안 매 합 시작 시 아군 전체 회복 (계수 42%)',
       setup: (b, u) => u.hooks.roundStart.push(() => {
-        if (b.round <= 4) b.allies(u).forEach(a => b.heal(u, a, 0.5, '생생조화신공'));
+        if (b.round <= 4) b.allies(u).forEach(a => b.heal(u, a, 0.42, '생생조화신공'));
       }) },
     { id: 'geumgang', name: '금강불괴', type: 'passive',
       desc: '점혈 면역, 받는 무기 피해 -20%',
@@ -69,8 +69,8 @@
       desc: '1~3합 동안 자신에게 도발, 받는 피해 -30%',
       setup: (b, u) => { b.addStatus(u, u, 'taunt', 3); b.addMod(u, 'taken', -0.3, 3, '철벽마갑'); } },
     { id: 'changgung', name: '창궁검법', type: 'chase', rate: 45,
-      desc: '평타 후 같은 적에게 무기 피해 160%',
-      cast: (b, u, t) => b.damage(u, t, 'ext', 1.6, '창궁검법') },
+      desc: '평타 후 같은 적에게 무기 피해 145%',
+      cast: (b, u, t) => b.damage(u, t, 'ext', 1.45, '창궁검법') },
     { id: 'mancheon', name: '만천화우', type: 'active', rate: 30,
       desc: '무작위 적에게 3회 무기 피해 70%, 타격마다 30% 확률로 출혈(2합)',
       cast: (b, u) => { for (let i = 0; i < 3; i++) b.pickEnemies(u, 1).forEach(t => {
@@ -78,8 +78,8 @@
         if (b.rand() < 0.3) b.addStatus(u, t, 'bleed', 2, { kind: 'ext', coef: 0.4 });
       }); } },
     { id: 'ildo', name: '일도양단', type: 'chase', rate: 35,
-      desc: '평타 후 같은 적에게 무기 피해 200% + 무장해제(1합)',
-      cast: (b, u, t) => { b.damage(u, t, 'ext', 2.0, '일도양단'); b.addStatus(u, t, 'disarm', 1); } },
+      desc: '평타 후 같은 적에게 무기 피해 160% + 무장해제(1합)',
+      cast: (b, u, t) => { b.damage(u, t, 'ext', 1.45, '일도양단'); b.addStatus(u, t, 'disarm', 1); } },
     formation('bukdu', '천강북두진', '금', '아군 전체 주는 피해 +12%',
       (b, u) => b.allies(u).forEach(a => b.addMod(a, 'dealt', 0.12, Infinity, '천강북두진'))),
     formation('cheongryong', '청룡진', '목', '매 합 시작 시 아군 전체 회복 (계수 25%)',
@@ -110,9 +110,9 @@
       desc: '자신에게 도발(2합), 적 전체에게 내공 피해 50%',
       cast: (b, u) => { b.addStatus(u, u, 'taunt', 2); b.pickEnemies(u, 3).forEach(t => b.damage(u, t, 'int', 0.5, '사자후')); } },
     { id: 'bantan', name: '반탄경', type: 'passive',
-      desc: '평타에 맞으면 30% 확률로 반격 (무기 피해 80%)',
+      desc: '평타에 맞으면 35% 확률로 반격 (무기 피해 100%)',
       setup: (b, u) => u.hooks.damaged.push((src, info) => {
-        if (info.normal && !src.dead && b.rand() < 0.3) b.damage(u, src, 'ext', 0.8, '반탄경', { counter: true });
+        if (info.normal && !src.dead && b.rand() < 0.35) b.damage(u, src, 'ext', 1.0, '반탄경', { counter: true });
       }) },
     { id: 'sangong', name: '산공독', type: 'active', rate: 35,
       desc: '적 2명 봉인(1합)',
@@ -161,22 +161,22 @@
         b.log(`${b.tag(u)}의 사중구활: 체력 비율이 ${mine < theirs ? '낮아' : '높아'} 아군 전체 ${text}`);
       }) },
     { id: 'hyeolmaek', name: '혈맥상통', type: 'passive',
-      desc: '3합부터 자신이 무기 피해를 줄 때마다 체력 비율이 가장 낮은 아군이 그 피해의 20%를 회복',
+      desc: '3합부터 자신이 무기 피해를 줄 때마다 체력 비율이 가장 낮은 아군이 그 피해의 35%를 회복',
       setup: (b, u) => u.hooks.dealt.push((dmg, kind) => {
         if (b.round < 3 || kind !== 'ext') return;
         const t = b.allies(u).sort((x, y) => x.hp / x.maxHp - y.hp / y.maxHp)[0];
-        b.healFlat(u, t, dmg * 0.2, '혈맥상통');
+        b.healFlat(u, t, dmg * 0.35, '혈맥상통');
       }) },
     { id: 'gwangpung', name: '광풍쾌검', type: 'passive',
-      desc: '무기 피해 치명타 확률 +25% (치명타 시 1.5배)',
-      setup: (b, u) => b.addMod(u, 'crit', 0.25, Infinity, '광풍쾌검') },
+      desc: '무기 피해 치명타 확률 +35% (치명타 시 1.5배)',
+      setup: (b, u) => b.addMod(u, 'crit', 0.35, Infinity, '광풍쾌검') },
     // ---- 출시 무인 50명 무공 (수치는 임시, 밸런스 때 시뮬레이터로 정함) ----
     { id: 'sorimgon', name: '소림곤법', type: 'chase', rate: 40,
       desc: '평타 후 같은 적에게 무기 피해 130%, 2합 동안 자신이 받는 무기 피해 -15%',
       cast: (b, u, t) => { b.damage(u, t, 'ext', 1.3, '소림곤법'); b.addMod(u, 'takenExt', -0.15, 2, '소림곤법'); } },
     { id: 'yeonhwarak', name: '연화락', type: 'active', rate: 35,
-      desc: '적 2명에게 무기 피해 80%, 2합 동안 그 적들이 받는 피해 +15%',
-      cast: (b, u) => b.pickEnemies(u, 2).forEach(t => { b.damage(u, t, 'ext', 0.8, '연화락'); b.addMod(t, 'taken', 0.15, 2, '연화락'); }) },
+      desc: '적 2명에게 무기 피해 80%, 2합 동안 그 적들이 받는 피해 +10%',
+      cast: (b, u) => b.pickEnemies(u, 2).forEach(t => { b.damage(u, t, 'ext', 0.8, '연화락'); b.addMod(t, 'taken', 0.1, 2, '연화락'); }) },
     { id: 'chwigwon', name: '취권', type: 'passive',
       desc: '회피 +20%, 회피하면 50% 확률로 반격 (무기 피해 80%)',
       setup: (b, u) => {
@@ -184,8 +184,8 @@
         u.hooks.evaded.push(src => { if (!src.dead && b.rand() < 0.5) b.damage(u, src, 'ext', 0.8, '취권', { counter: true }); });
       } },
     { id: 'dapseol', name: '답설무흔', type: 'aura',
-      desc: '1~3합 동안 자신 경공 +20%, 회피 +15%',
-      setup: (b, u) => { b.addMod(u, 'spd', 0.2, 3, '답설무흔'); b.addMod(u, 'evade', 0.15, 3, '답설무흔'); } },
+      desc: '1~4합 동안 자신 경공 +20%, 회피 +20%',
+      setup: (b, u) => { b.addMod(u, 'spd', 0.2, 4, '답설무흔'); b.addMod(u, 'evade', 0.2, 4, '답설무흔'); } },
     { id: 'tongbae', name: '통배권', type: 'chase', rate: 40,
       desc: '평타 후 같은 적에게 무기 피해 120%, 2합 동안 대상 호신 -20%',
       cast: (b, u, t) => { b.damage(u, t, 'ext', 1.2, '통배권'); b.addMod(t, 'def', -0.2, 2, '통배권'); } },
@@ -254,12 +254,12 @@
         else b.addStatus(u, t, 'poison', 3, { kind: 'int', coef: 0.4 });
       }) },
     { id: 'juwi', name: '주위상', type: 'passive',
-      desc: '체력이 40% 아래로 처음 떨어지면 2합 동안 회피 +40%',
+      desc: '체력이 40% 아래로 처음 떨어지면 3합 동안 회피 +50%',
       setup: (b, u) => u.hooks.damaged.push(() => {
         if (u.stacks['주위상'] || u.hp / u.maxHp >= 0.4) return;
         b.stack(u, '주위상', 1);
-        b.addMod(u, 'evade', 0.4, 2, '주위상');
-        b.log(`${b.tag(u)}의 주위상: 2합 동안 회피 +40%`);
+        b.addMod(u, 'evade', 0.5, 3, '주위상');
+        b.log(`${b.tag(u)}의 주위상: 3합 동안 회피 +50%`);
       }) },
     { id: 'sampan', name: '삼판부', type: 'active', rate: 35,
       desc: '적 1명에게 무기 피해, 1~3번째 발동은 180%, 그 뒤엔 80%',
@@ -283,20 +283,20 @@
       desc: '체력 비율이 가장 낮은 적 1명에게 무기 피해 160%',
       cast: (b, u) => { const t = b.lowestHpFoe(u); if (t) b.damage(u, t, 'ext', 1.6, '도궁비현'); } },
     { id: 'maehwa', name: '매화침', type: 'chase', rate: 40,
-      desc: '평타 후 같은 적에게 중독(3합, 매 합 내공 피해 40%), 이미 중독이면 중독 피해가 바로 한 번 터짐',
-      cast: (b, u, t) => { if (t.status.poison) b.burstDot(t, 'poison'); else b.addStatus(u, t, 'poison', 3, { kind: 'int', coef: 0.4 }); } },
+      desc: '평타 후 같은 적에게 중독(3합, 매 합 내공 피해 50%), 이미 중독이면 중독 피해가 바로 한 번 터짐',
+      cast: (b, u, t) => { if (t.status.poison) b.burstDot(t, 'poison'); else b.addStatus(u, t, 'poison', 3, { kind: 'int', coef: 0.5 }); } },
     { id: 'jamyeong', name: '잠영보', type: 'aura',
-      desc: '1~2합 동안 은신 (적이 노리지 못함), 처음 주는 피해 +30%',
+      desc: '1~3합 동안 은신 (적이 노리지 못함), 처음 주는 피해 +60%',
       setup: (b, u) => {
-        b.addStatus(u, u, 'stealth', 2);
-        b.addMod(u, 'dealt', 0.3, Infinity, '잠영보');
+        b.addStatus(u, u, 'stealth', 3);
+        b.addMod(u, 'dealt', 0.6, Infinity, '잠영보');
         u.hooks.dealt.push(() => { u.mods = u.mods.filter(m => m.label !== '잠영보'); });
       } },
     { id: 'wolha', name: '월하독작', type: 'passive',
-      desc: '매 합 시작 시 쓰러진 아군 1명마다 자신 주는 피해 +15%',
+      desc: '매 합 시작 시 쓰러진 아군 1명마다 자신 주는 피해 +50%',
       setup: (b, u) => u.hooks.roundStart.push(() => {
         const down = b.units.filter(a => a.side === u.side && a.dead).length;
-        if (down) b.addMod(u, 'dealt', 0.15 * down, Infinity, '월하독작');
+        if (down) b.addMod(u, 'dealt', 0.5 * down, Infinity, '월하독작');
       }) },
     { id: 'poseung', name: '포승술', type: 'chase', rate: 35,
       desc: '평타 후 같은 적 무장해제(1합) + 2합 동안 경공 -20%',
@@ -327,10 +327,10 @@
       desc: '적 1명에게 무기 피해 130%, 40% 확률로 점혈(1합)',
       cast: (b, u) => b.pickEnemies(u, 1).forEach(t => { b.damage(u, t, 'ext', 1.3, '유성추'); if (b.rand() < 0.4) b.addStatus(u, t, 'stun', 1); }) },
     { id: 'juhwa', name: '주화입마', type: 'passive',
-      desc: '받는 피해 +10%, 매 합 시작 시 잃은 체력 비율만큼 주는 피해 증가 (최대 +40%)',
+      desc: '받는 피해 +5%, 매 합 시작 시 잃은 체력 비율만큼 주는 피해 증가 (최대 +80%)',
       setup: (b, u) => {
-        b.addMod(u, 'taken', 0.1, Infinity, '주화입마 대가');
-        u.hooks.roundStart.push(() => b.addMod(u, 'dealt', 0.4 * (1 - u.hp / u.maxHp), Infinity, '주화입마'));
+        b.addMod(u, 'taken', 0.05, Infinity, '주화입마 대가');
+        u.hooks.roundStart.push(() => b.addMod(u, 'dealt', 0.8 * (1 - u.hp / u.maxHp), Infinity, '주화입마'));
       } },
     { id: 'idok', name: '이독공독', type: 'active', rate: 40,
       desc: '체력 비율이 가장 낮은 아군 회복 (계수 80%) + 적 1명 중독(2합, 매 합 내공 피해 40%)',
@@ -339,15 +339,15 @@
         b.pickEnemies(u, 1).forEach(t => b.addStatus(u, t, 'poison', 2, { kind: 'int', coef: 0.4 }));
       } },
     { id: 'gujeol', name: '구절편', type: 'active', rate: 35,
-      desc: '적 2명에게 무기 피해 80%, 그중 1명 무장해제(1합)',
+      desc: '적 2명에게 무기 피해 60%, 그중 1명 무장해제(1합)',
       cast: (b, u) => {
         const ts = b.pickEnemies(u, 2);
-        ts.forEach(t => b.damage(u, t, 'ext', 0.8, '구절편'));
+        ts.forEach(t => b.damage(u, t, 'ext', 0.6, '구절편'));
         if (ts.length) b.addStatus(u, ts[0], 'disarm', 1);
       } },
     { id: 'cheonmaryeong', name: '천마령', type: 'aura',
-      desc: '1~3합 동안 아군 전체 경공 +15%',
-      setup: (b, u) => b.allies(u).forEach(a => b.addMod(a, 'spd', 0.15, 3, '천마령')) },
+      desc: '1~3합 동안 아군 전체 경공 +25%',
+      setup: (b, u) => b.allies(u).forEach(a => b.addMod(a, 'spd', 0.25, 3, '천마령')) },
     { id: 'hopyo', name: '호표', type: 'passive',
       desc: '아군 주장이 받는 피해의 25%를 대신 받고, 대신 받을 때 30% 확률로 반격 (무기 피해 80%). 자신이 주장이면 효과 없음',
       setup: (b, u) => {
@@ -368,11 +368,11 @@
       desc: '적 주장에게 무기 피해 120% + 2합 동안 주는 피해 -15%',
       cast: (b, u) => { const t = b.leaderTarget(u); if (t) { b.damage(u, t, 'ext', 1.2, '사인선사마'); b.addMod(t, 'dealt', -0.15, 2, '사인선사마'); } } },
     { id: 'mumyeong', name: '무명검', type: 'aura',
-      desc: '준비 합에 적 1명을 표적으로 정해, 그 적에게 주는 피해 +25%',
+      desc: '준비 합에 적 1명을 표적으로 정해, 그 적에게 주는 피해 +55%',
       setup: (b, u) => {
         const [t] = b.pickEnemies(u, 1);
         if (!t) return;
-        u.mark = { target: t, bonus: 0.25 };
+        u.mark = { target: t, bonus: 0.55 };
         b.log(`${b.tag(u)}의 무명검: ${b.tag(t)}를 표적으로 정함`);
       } },
     { id: 'gyeokgong', name: '격공점혈', type: 'active', rate: 35,
@@ -402,87 +402,87 @@
   // ---------- 무인 ----------
   // hp = 체력, spd = 경공. apt: 금목토수화 순서의 적성. skill: 자기 무공(무공창 1칸)
   const UNITS = [
-    { id: 'baek', name: '백무진', title: '청운검주', faction: '정파', hp: 3000, ext: 150, int: 205, def: 120, spd: 160, apt: 'SABAB', skill: 'cheongun' },
-    { id: 'seol', name: '설지향', title: '화산의선', faction: '정파', hp: 2800, ext: 90, int: 190, def: 110, spd: 150, apt: 'ABBSA', skill: 'saengsaeng' },
-    { id: 'hye', name: '혜법', title: '금강권승', faction: '정파', hp: 3600, ext: 170, int: 120, def: 200, spd: 95, apt: 'ABSCB', skill: 'geumgang' },
-    { id: 'hyeol', name: '혈영마군', title: '혈마전인', faction: '마교', hp: 3000, ext: 220, int: 110, def: 130, spd: 140, apt: 'BASCS', skill: 'hyeolma' },
-    { id: 'dok', name: '독수귀녀', title: '만독곡주', faction: '마교', hp: 2700, ext: 80, int: 200, def: 100, spd: 175, apt: 'CBASA', skill: 'mandok' },
-    { id: 'cheol', name: '철갑마웅', title: '흑풍당주', faction: '마교', hp: 3800, ext: 160, int: 90, def: 210, spd: 85, apt: 'BASBA', skill: 'cheolbyeok' },
-    { id: 'namgung', name: '남궁휘', title: '창궁검룡', faction: '정파', hp: 3000, ext: 195, int: 130, def: 140, spd: 170, apt: 'SABBA', skill: 'changgung' },
-    { id: 'dang', name: '당소소', title: '암기천후', faction: '정파', hp: 2700, ext: 185, int: 140, def: 100, spd: 185, apt: 'ASBAB', skill: 'mancheon' },
-    { id: 'nameless', name: '무명도객', title: '낭인', faction: '사파', hp: 3200, ext: 210, int: 80, def: 150, spd: 130, apt: 'SBABA', skill: 'ildo' },
+    { id: 'baek', name: '백무진', title: '청운검주', faction: '정파', hp: 2520, ext: 127, int: 173, def: 101, spd: 160, apt: 'SABAB', skill: 'cheongun' },
+    { id: 'seol', name: '설지향', title: '화산의선', faction: '정파', hp: 2820, ext: 91, int: 191, def: 111, spd: 150, apt: 'ABBSA', skill: 'saengsaeng' },
+    { id: 'hye', name: '혜법', title: '금강권승', faction: '정파', hp: 3110, ext: 147, int: 103, def: 173, spd: 95, apt: 'ABSCB', skill: 'geumgang' },
+    { id: 'hyeol', name: '혈영마군', title: '혈마전인', faction: '마교', hp: 2540, ext: 186, int: 93, def: 110, spd: 140, apt: 'BASCS', skill: 'hyeolma' },
+    { id: 'dok', name: '독수귀녀', title: '만독곡주', faction: '마교', hp: 3180, ext: 94, int: 235, def: 118, spd: 175, apt: 'CBASA', skill: 'mandok' },
+    { id: 'cheol', name: '철갑마웅', title: '흑풍당주', faction: '마교', hp: 3140, ext: 132, int: 74, def: 174, spd: 85, apt: 'BASBA', skill: 'cheolbyeok' },
+    { id: 'namgung', name: '남궁휘', title: '창궁검룡', faction: '정파', hp: 2400, ext: 156, int: 104, def: 112, spd: 170, apt: 'SABBA', skill: 'changgung' },
+    { id: 'dang', name: '당소소', title: '암기천후', faction: '정파', hp: 2420, ext: 166, int: 126, def: 89, spd: 185, apt: 'ASBAB', skill: 'mancheon' },
+    { id: 'nameless', name: '무명도객', title: '낭인', faction: '사파', hp: 2570, ext: 169, int: 65, def: 121, spd: 130, apt: 'SBABA', skill: 'ildo' },
     { id: 'cheongheo', name: '청허진인', title: '무당장문', faction: '정파', hp: 3200, ext: 110, int: 170, def: 170, spd: 120, apt: 'ABSAB', skill: 'samjae' },
-    { id: 'jin', name: '진세악', title: '종남검수', faction: '정파', hp: 3000, ext: 175, int: 140, def: 140, spd: 150, apt: 'SABBA', skill: 'bukdu' },
-    { id: 'jeongyeon', name: '정연', title: '아미신니', faction: '정파', hp: 2800, ext: 90, int: 185, def: 120, spd: 155, apt: 'BABSA', skill: 'cheongsim' },
-    { id: 'gongjin', name: '공진', title: '나한당주', faction: '정파', hp: 3500, ext: 160, int: 150, def: 190, spd: 100, apt: 'BASCA', skill: 'saja' },
-    { id: 'ma', name: '마천우', title: '귀영수', faction: '사파', hp: 2700, ext: 170, int: 130, def: 100, spd: 190, apt: 'ASBAB', skill: 'jeomhyeol' },
-    { id: 'guyang', name: '구양철', title: '철장방주', faction: '사파', hp: 3200, ext: 190, int: 150, def: 150, spd: 120, apt: 'BAABS', skill: 'naesang' },
-    { id: 'yeon', name: '연소백', title: '쾌검랑', faction: '사파', hp: 2900, ext: 200, int: 100, def: 120, spd: 185, apt: 'SABCB', skill: 'gwangpung' },
-    { id: 'maeng', name: '맹악', title: '흑수장군', faction: '마교', hp: 3600, ext: 150, int: 110, def: 200, spd: 90, apt: 'BBSAB', skill: 'bantan' },
-    { id: 'hahu', name: '하후빈', title: '산공노조', faction: '마교', hp: 2800, ext: 100, int: 190, def: 110, spd: 160, apt: 'CBASA', skill: 'sangong' },
-    { id: 'so', name: '소요령', title: '섭혼마녀', faction: '마교', hp: 2700, ext: 90, int: 210, def: 100, spd: 170, apt: 'CBBSA', skill: 'seophon' },
-    { id: 'songhak', name: '송학', title: '녹림군사', faction: '사파', hp: 3000, ext: 120, int: 175, def: 140, spd: 145, apt: 'ASBBC', skill: 'cheongryong' },
+    { id: 'jin', name: '진세악', title: '종남검수', faction: '정파', hp: 2720, ext: 158, int: 127, def: 127, spd: 150, apt: 'SABBA', skill: 'bukdu' },
+    { id: 'jeongyeon', name: '정연', title: '아미신니', faction: '정파', hp: 3150, ext: 101, int: 209, def: 135, spd: 155, apt: 'BABSA', skill: 'cheongsim' },
+    { id: 'gongjin', name: '공진', title: '나한당주', faction: '정파', hp: 3430, ext: 157, int: 147, def: 186, spd: 100, apt: 'BASCA', skill: 'saja' },
+    { id: 'ma', name: '마천우', title: '귀영수', faction: '사파', hp: 2550, ext: 161, int: 123, def: 95, spd: 190, apt: 'ASBAB', skill: 'jeomhyeol' },
+    { id: 'guyang', name: '구양철', title: '철장방주', faction: '사파', hp: 3170, ext: 189, int: 148, def: 148, spd: 120, apt: 'BAABS', skill: 'naesang' },
+    { id: 'yeon', name: '연소백', title: '쾌검랑', faction: '사파', hp: 2580, ext: 178, int: 89, def: 106, spd: 185, apt: 'SABCB', skill: 'gwangpung' },
+    { id: 'maeng', name: '맹악', title: '흑수장군', faction: '마교', hp: 3380, ext: 141, int: 103, def: 188, spd: 90, apt: 'BBSAB', skill: 'bantan' },
+    { id: 'hahu', name: '하후빈', title: '산공노조', faction: '마교', hp: 3230, ext: 115, int: 219, def: 127, spd: 160, apt: 'CBASA', skill: 'sangong' },
+    { id: 'so', name: '소요령', title: '섭혼마녀', faction: '마교', hp: 3170, ext: 106, int: 247, def: 117, spd: 170, apt: 'CBBSA', skill: 'seophon' },
+    { id: 'songhak', name: '송학', title: '녹림군사', faction: '사파', hp: 3340, ext: 133, int: 195, def: 155, spd: 145, apt: 'ASBBC', skill: 'cheongryong' },
     { id: 'moyong', name: '모용상', title: '모용세가주', faction: '정파', hp: 3200, ext: 130, int: 180, def: 160, spd: 130, apt: 'BACSB', skill: 'hyeonmu' },
-    { id: 'jeokyeom', name: '적염후', title: '주작당주', faction: '마교', hp: 3000, ext: 170, int: 160, def: 130, spd: 140, apt: 'BCBAS', skill: 'jujak' },
-    { id: 'paeng', name: '팽무혁', title: '하북도왕', faction: '정파', hp: 3100, ext: 215, int: 90, def: 140, spd: 160, apt: 'SBABC', skill: 'jikdo' },
-    { id: 'sahyeol', name: '사혈귀', title: '혈수당주', faction: '마교', hp: 2900, ext: 200, int: 100, def: 120, spd: 175, apt: 'BSACA', skill: 'talmyeong' },
-    { id: 'jangsam', name: '장삼', title: '금나귀수', faction: '사파', hp: 3000, ext: 180, int: 120, def: 140, spd: 165, apt: 'ABSBA', skill: 'geumna' },
-    { id: 'cheolwi', name: '철위강', title: '호위대장', faction: '정파', hp: 3800, ext: 140, int: 100, def: 210, spd: 90, apt: 'BBSAA', skill: 'howi' },
-    { id: 'moyongyeon', name: '모용연', title: '두전성이 전인', faction: '정파', hp: 3000, ext: 120, int: 195, def: 140, spd: 150, apt: 'ABBSA', skill: 'dujeon' },
-    { id: 'dokgo', name: '독고패', title: '낭인검귀', faction: '사파', hp: 3100, ext: 205, int: 110, def: 130, spd: 155, apt: 'SABCB', skill: 'sajung' },
-    { id: 'baengni', name: '백리청', title: '의협', faction: '정파', hp: 3100, ext: 190, int: 130, def: 140, spd: 145, apt: 'ASBBA', skill: 'hyeolmaek' },
-    { id: 'jegal', name: '제갈운', title: '신의', faction: '정파', hp: 2800, ext: 80, int: 190, def: 120, spd: 140, apt: 'ABASB', skill: 'hoechun' },
-    // 출시 무인 50명 (스탯은 역할별 임시값, 밸런스 때 시뮬레이터로 정함)
-    { id: 'jimyeong', name: '지명', title: '소림 지자배 승려', faction: '정파', hp: 3400, ext: 145, int: 105, def: 195, spd: 100, apt: 'BCSBA', skill: 'sorimgon' },
-    { id: 'wonsosam', name: '원소삼', title: '삼결 걸개', faction: '정파', hp: 3000, ext: 170, int: 140, def: 135, spd: 150, apt: 'CSBAB', skill: 'yeonhwarak' },
-    { id: 'danorang', name: '단오랑', title: '취권 여개', faction: '정파', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'ABCSB', skill: 'chwigwon' },
-    { id: 'mokunbi', name: '목운비', title: '곤륜신행', faction: '정파', hp: 2700, ext: 180, int: 115, def: 105, spd: 190, apt: 'CSBAB', skill: 'dapseol' },
-    { id: 'dojungak', name: '도중악', title: '공동철권', faction: '정파', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'BCSBA', skill: 'tongbae' },
-    { id: 'yeopcheong', name: '엽청', title: '점창쾌검', faction: '정파', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'SBABC', skill: 'sipgubong' },
-    { id: 'haunhak', name: '하운학', title: '청성검객', faction: '정파', hp: 2700, ext: 85, int: 200, def: 105, spd: 160, apt: 'ABCSB', skill: 'cheonsa' },
-    { id: 'seokhaerang', name: '석해랑', title: '해남검수', faction: '정파', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'ABCSB', skill: 'nodo' },
-    { id: 'hwangboyeol', name: '황보열', title: '황보세가 소가주', faction: '정파', hp: 3360, ext: 210, int: 110, def: 160, spd: 140, apt: 'SBABC', skill: 'dogeom' },
-    { id: 'akjinmyeong', name: '악진명', title: '악가창수', faction: '정파', hp: 3000, ext: 190, int: 115, def: 140, spd: 145, apt: 'SBABC', skill: 'yukhap' },
-    { id: 'eonseoyeon', name: '언서연', title: '언가권녀', faction: '정파', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'BCSBA', skill: 'bunggwon' },
-    { id: 'cheongyangja', name: '청양자', title: '전진도사', faction: '정파', hp: 3000, ext: 105, int: 180, def: 130, spd: 140, apt: 'SBABC', skill: 'chilseong' },
-    { id: 'yusocheong', name: '유소청', title: '형산검녀', faction: '정파', hp: 2900, ext: 165, int: 145, def: 130, spd: 155, apt: 'BABCS', skill: 'namak' },
-    { id: 'gwakjin', name: '곽진', title: '숭산검수', faction: '정파', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'BCSBA', skill: 'jungak' },
-    { id: 'wijagyeong', name: '위자경', title: '항산제자', faction: '정파', hp: 3600, ext: 155, int: 95, def: 205, spd: 90, apt: 'BCSBA', skill: 'bugak' },
-    { id: 'notaegyeong', name: '노태경', title: '태산권사', faction: '정파', hp: 3000, ext: 190, int: 115, def: 140, spd: 145, apt: 'BCSBA', skill: 'cheolsa' },
-    { id: 'jangbuun', name: '장부운', title: '모산도사', faction: '정파', hp: 2800, ext: 90, int: 195, def: 110, spd: 155, apt: 'ABCSB', skill: 'mosan' },
-    { id: 'maenggwan', name: '맹관', title: '검각수문검', faction: '정파', hp: 3600, ext: 155, int: 95, def: 205, spd: 90, apt: 'SBABC', skill: 'ilbu' },
-    { id: 'soyuk', name: '소육', title: '하오문 정보꾼', faction: '사파', hp: 2700, ext: 180, int: 115, def: 105, spd: 190, apt: 'CSBAB', skill: 'sujeon' },
-    { id: 'hongmae', name: '홍매', title: '기루 주인', faction: '사파', hp: 2800, ext: 90, int: 195, def: 110, spd: 155, apt: 'ABCSB', skill: 'mihon' },
-    { id: 'noesam', name: '뇌삼', title: '객잔 점소이', faction: '사파', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'CSBAB', skill: 'juwi' },
-    { id: 'udaeho', name: '우대호', title: '녹림 도부수', faction: '사파', hp: 3000, ext: 190, int: 115, def: 140, spd: 145, apt: 'BABCS', skill: 'sampan' },
-    { id: 'jinryeong', name: '진령', title: '녹림 궁수', faction: '사파', hp: 2800, ext: 185, int: 110, def: 110, spd: 185, apt: 'CSBAB', skill: 'yeonju' },
-    { id: 'isam', name: '이삼', title: '장강수귀', faction: '사파', hp: 3100, ext: 175, int: 135, def: 140, spd: 145, apt: 'ABCSB', skill: 'nangri' },
-    { id: 'suyeon', name: '수연', title: '장강비연', faction: '사파', hp: 2700, ext: 180, int: 115, def: 105, spd: 190, apt: 'SBABC', skill: 'biyeon' },
-    { id: 'gangil', name: '강일', title: '철노 수적', faction: '사파', hp: 3000, ext: 170, int: 140, def: 135, spd: 150, apt: 'CSBAB', skill: 'jegalno' },
-    { id: 'chilho', name: '칠호', title: '살막 칠호', faction: '사파', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'SBABC', skill: 'dogung' },
-    { id: 'heukjeop', name: '흑접', title: '살막 흑접', faction: '사파', hp: 2700, ext: 180, int: 115, def: 105, spd: 190, apt: 'ABCSB', skill: 'maehwa' },
-    { id: 'muyeong', name: '무영', title: '살막 무영', faction: '사파', hp: 2940, ext: 195, int: 115, def: 115, spd: 195, apt: 'SBABC', skill: 'jamyeong' },
-    { id: 'gowol', name: '고월', title: '월하낭인', faction: '사파', hp: 3200, ext: 200, int: 105, def: 150, spd: 135, apt: 'BABCS', skill: 'wolha' },
-    { id: 'jobaek', name: '조백', title: '현상 사냥꾼', faction: '사파', hp: 2900, ext: 165, int: 145, def: 130, spd: 155, apt: 'BCSBA', skill: 'poseung' },
-    { id: 'yongcheonho', name: '용천호', title: '청룡당 창수', faction: '마교', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'CSBAB', skill: 'changnyong' },
-    { id: 'cheongrin', name: '청린', title: '청룡당 쌍검녀', faction: '마교', hp: 2900, ext: 190, int: 105, def: 115, spd: 180, apt: 'CSBAB', skill: 'wonang' },
-    { id: 'baekcheolsan', name: '백철산', title: '백호당 도객', faction: '마교', hp: 3000, ext: 190, int: 115, def: 140, spd: 145, apt: 'SBABC', skill: 'maengho' },
-    { id: 'baeksogyo', name: '백소교', title: '백호당 조법녀', faction: '마교', hp: 2800, ext: 185, int: 110, def: 110, spd: 185, apt: 'SBABC', skill: 'hojo' },
-    { id: 'gugap', name: '구갑', title: '현무당 방패수', faction: '마교', hp: 3600, ext: 155, int: 95, def: 205, spd: 90, apt: 'BCSBA', skill: 'deungpae' },
-    { id: 'dunsan', name: '둔산', title: '현무당 철퇴수', faction: '마교', hp: 3400, ext: 145, int: 105, def: 195, spd: 100, apt: 'BCSBA', skill: 'yuseong' },
-    { id: 'gwaksam', name: '곽삼', title: '천마 광도', faction: '마교', hp: 3100, ext: 195, int: 110, def: 145, spd: 140, apt: 'BABCS', skill: 'juhwa' },
-    { id: 'yuhwa', name: '유화', title: '마교 약녀', faction: '마교', hp: 3000, ext: 105, int: 180, def: 130, spd: 140, apt: 'ABCSB', skill: 'idok' },
-    { id: 'yeonbi', name: '연비', title: '소마녀', faction: '마교', hp: 2900, ext: 165, int: 145, def: 130, spd: 155, apt: 'BABCS', skill: 'gujeol' },
-    { id: 'heukui', name: '흑의사자', title: '천마령 전령', faction: '마교', hp: 2900, ext: 100, int: 185, def: 125, spd: 145, apt: 'ABCSB', skill: 'cheonmaryeong' },
-    { id: 'jangwiwon', name: '장위원', title: '진원표국 표두', faction: '신비', hp: 3780, ext: 165, int: 100, def: 215, spd: 95, apt: 'BCSBA', skill: 'hopyo' },
-    { id: 'jeonsoho', name: '전소호', title: '표사', faction: '신비', hp: 2900, ext: 165, int: 145, def: 130, spd: 155, apt: 'CSBAB', skill: 'jinwon' },
-    { id: 'haryeong', name: '하령', title: '여표사', faction: '신비', hp: 2800, ext: 185, int: 110, def: 110, spd: 185, apt: 'CSBAB', skill: 'sain' },
-    { id: 'bokmyeon', name: '복면객', title: '정체불명의 복면객', faction: '신비', hp: 3200, ext: 200, int: 105, def: 150, spd: 135, apt: 'SBABC', skill: 'mumyeong' },
-    { id: 'hoeui', name: '회의집사', title: '회의 집사', faction: '신비', hp: 2700, ext: 85, int: 200, def: 105, spd: 160, apt: 'ABCSB', skill: 'gyeokgong' },
-    { id: 'eunmyeon', name: '은면여인', title: '은가면 여인', faction: '신비', hp: 2800, ext: 90, int: 195, def: 110, spd: 155, apt: 'BABCS', skill: 'sipmyeon' },
-    { id: 'wangdaega', name: '왕대가', title: '객잔 숙수', faction: '신비', hp: 3200, ext: 200, int: 105, def: 150, spd: 135, apt: 'BABCS', skill: 'pojeong' },
-    { id: 'nocho', name: '노초', title: '나루터 뱃사공', faction: '신비', hp: 3400, ext: 145, int: 105, def: 195, spd: 100, apt: 'ABCSB', skill: 'sunsu' },
-    { id: 'sana', name: '산아', title: '약초꾼 소녀', faction: '신비', hp: 2900, ext: 100, int: 185, def: 125, spd: 145, apt: 'CSBAB', skill: 'sinnong' },
+    { id: 'jeokyeom', name: '적염후', title: '주작당주', faction: '마교', hp: 3530, ext: 200, int: 188, def: 153, spd: 140, apt: 'BCBAS', skill: 'jujak' },
+    { id: 'paeng', name: '팽무혁', title: '하북도왕', faction: '정파', hp: 2500, ext: 173, int: 73, def: 113, spd: 160, apt: 'SBABC', skill: 'jikdo' },
+    { id: 'sahyeol', name: '사혈귀', title: '혈수당주', faction: '마교', hp: 2880, ext: 199, int: 99, def: 120, spd: 175, apt: 'BSACA', skill: 'talmyeong' },
+    { id: 'jangsam', name: '장삼', title: '금나귀수', faction: '사파', hp: 2740, ext: 165, int: 110, def: 128, spd: 165, apt: 'ABSBA', skill: 'geumna' },
+    { id: 'cheolwi', name: '철위강', title: '호위대장', faction: '정파', hp: 3500, ext: 129, int: 92, def: 194, spd: 90, apt: 'BBSAA', skill: 'howi' },
+    { id: 'moyongyeon', name: '모용연', title: '두전성이 전인', faction: '정파', hp: 2940, ext: 118, int: 191, def: 137, spd: 150, apt: 'ABBSA', skill: 'dujeon' },
+    { id: 'dokgo', name: '독고패', title: '낭인검귀', faction: '사파', hp: 2630, ext: 174, int: 93, def: 110, spd: 155, apt: 'SABCB', skill: 'sajung' },
+    { id: 'baengni', name: '백리청', title: '의협', faction: '정파', hp: 2780, ext: 170, int: 116, def: 125, spd: 145, apt: 'ASBBA', skill: 'hyeolmaek' },
+    { id: 'jegal', name: '제갈운', title: '신의', faction: '정파', hp: 3010, ext: 86, int: 204, def: 129, spd: 140, apt: 'ABASB', skill: 'hoechun' },
+    // 출시 무인 50명
+    { id: 'jimyeong', name: '지명', title: '소림 지자배 승려', faction: '정파', hp: 3010, ext: 128, int: 93, def: 173, spd: 100, apt: 'BCSBA', skill: 'sorimgon' },
+    { id: 'wonsosam', name: '원소삼', title: '삼결 걸개', faction: '정파', hp: 2720, ext: 155, int: 127, def: 122, spd: 150, apt: 'CSBAB', skill: 'yeonhwarak' },
+    { id: 'danorang', name: '단오랑', title: '취권 여개', faction: '정파', hp: 2580, ext: 169, int: 93, def: 103, spd: 180, apt: 'ABCSB', skill: 'chwigwon' },
+    { id: 'mokunbi', name: '목운비', title: '곤륜신행', faction: '정파', hp: 2680, ext: 178, int: 114, def: 104, spd: 190, apt: 'CSBAB', skill: 'dapseol' },
+    { id: 'dojungak', name: '도중악', title: '공동철권', faction: '정파', hp: 2730, ext: 171, int: 96, def: 128, spd: 140, apt: 'BCSBA', skill: 'tongbae' },
+    { id: 'yeopcheong', name: '엽청', title: '점창쾌검', faction: '정파', hp: 2520, ext: 165, int: 91, def: 100, spd: 180, apt: 'SBABC', skill: 'sipgubong' },
+    { id: 'haunhak', name: '하운학', title: '청성검객', faction: '정파', hp: 2880, ext: 91, int: 214, def: 112, spd: 160, apt: 'ABCSB', skill: 'cheonsa' },
+    { id: 'seokhaerang', name: '석해랑', title: '해남검수', faction: '정파', hp: 2710, ext: 170, int: 96, def: 127, spd: 140, apt: 'ABCSB', skill: 'nodo' },
+    { id: 'hwangboyeol', name: '황보열', title: '황보세가 소가주', faction: '정파', hp: 2740, ext: 172, int: 90, def: 131, spd: 140, apt: 'SBABC', skill: 'dogeom' },
+    { id: 'akjinmyeong', name: '악진명', title: '악가창수', faction: '정파', hp: 2610, ext: 165, int: 101, def: 122, spd: 145, apt: 'SBABC', skill: 'yukhap' },
+    { id: 'eonseoyeon', name: '언서연', title: '언가권녀', faction: '정파', hp: 2730, ext: 172, int: 97, def: 128, spd: 140, apt: 'BCSBA', skill: 'bunggwon' },
+    { id: 'cheongyangja', name: '청양자', title: '전진도사', faction: '정파', hp: 3030, ext: 106, int: 181, def: 131, spd: 140, apt: 'SBABC', skill: 'chilseong' },
+    { id: 'yusocheong', name: '유소청', title: '형산검녀', faction: '정파', hp: 2670, ext: 152, int: 133, def: 120, spd: 155, apt: 'BABCS', skill: 'namak' },
+    { id: 'gwakjin', name: '곽진', title: '숭산검수', faction: '정파', hp: 2770, ext: 174, int: 98, def: 129, spd: 140, apt: 'BCSBA', skill: 'jungak' },
+    { id: 'wijagyeong', name: '위자경', title: '항산제자', faction: '정파', hp: 3150, ext: 136, int: 83, def: 180, spd: 90, apt: 'BCSBA', skill: 'bugak' },
+    { id: 'notaegyeong', name: '노태경', title: '태산권사', faction: '정파', hp: 2640, ext: 167, int: 102, def: 123, spd: 145, apt: 'BCSBA', skill: 'cheolsa' },
+    { id: 'jangbuun', name: '장부운', title: '모산도사', faction: '정파', hp: 2930, ext: 94, int: 205, def: 115, spd: 155, apt: 'ABCSB', skill: 'mosan' },
+    { id: 'maenggwan', name: '맹관', title: '검각수문검', faction: '정파', hp: 3200, ext: 138, int: 85, def: 182, spd: 90, apt: 'SBABC', skill: 'ilbu' },
+    { id: 'soyuk', name: '소육', title: '하오문 정보꾼', faction: '사파', hp: 2670, ext: 178, int: 113, def: 103, spd: 190, apt: 'CSBAB', skill: 'sujeon' },
+    { id: 'hongmae', name: '홍매', title: '기루 주인', faction: '사파', hp: 2920, ext: 94, int: 203, def: 115, spd: 155, apt: 'ABCSB', skill: 'mihon' },
+    { id: 'noesam', name: '뇌삼', title: '객잔 점소이', faction: '사파', hp: 2780, ext: 182, int: 100, def: 110, spd: 180, apt: 'CSBAB', skill: 'juwi' },
+    { id: 'udaeho', name: '우대호', title: '녹림 도부수', faction: '사파', hp: 2700, ext: 172, int: 104, def: 126, spd: 145, apt: 'BABCS', skill: 'sampan' },
+    { id: 'jinryeong', name: '진령', title: '녹림 궁수', faction: '사파', hp: 2650, ext: 176, int: 104, def: 104, spd: 185, apt: 'CSBAB', skill: 'yeonju' },
+    { id: 'isam', name: '이삼', title: '장강수귀', faction: '사파', hp: 2850, ext: 161, int: 124, def: 128, spd: 145, apt: 'ABCSB', skill: 'nangri' },
+    { id: 'suyeon', name: '수연', title: '장강비연', faction: '사파', hp: 2600, ext: 174, int: 110, def: 101, spd: 190, apt: 'SBABC', skill: 'biyeon' },
+    { id: 'gangil', name: '강일', title: '철노 수적', faction: '사파', hp: 2860, ext: 162, int: 134, def: 129, spd: 150, apt: 'CSBAB', skill: 'jegalno' },
+    { id: 'chilho', name: '칠호', title: '살막 칠호', faction: '사파', hp: 2550, ext: 167, int: 92, def: 101, spd: 180, apt: 'SBABC', skill: 'dogung' },
+    { id: 'heukjeop', name: '흑접', title: '살막 흑접', faction: '사파', hp: 2720, ext: 182, int: 116, def: 106, spd: 190, apt: 'ABCSB', skill: 'maehwa' },
+    { id: 'muyeong', name: '무영', title: '살막 무영', faction: '사파', hp: 3080, ext: 204, int: 121, def: 121, spd: 195, apt: 'SBABC', skill: 'jamyeong' },
+    { id: 'gowol', name: '고월', title: '월하낭인', faction: '사파', hp: 3090, ext: 194, int: 101, def: 145, spd: 135, apt: 'BABCS', skill: 'wolha' },
+    { id: 'jobaek', name: '조백', title: '현상 사냥꾼', faction: '사파', hp: 2890, ext: 164, int: 145, def: 130, spd: 155, apt: 'BCSBA', skill: 'poseung' },
+    { id: 'yongcheonho', name: '용천호', title: '청룡당 창수', faction: '마교', hp: 2820, ext: 177, int: 100, def: 132, spd: 140, apt: 'CSBAB', skill: 'changnyong' },
+    { id: 'cheongrin', name: '청린', title: '청룡당 쌍검녀', faction: '마교', hp: 2630, ext: 172, int: 95, def: 104, spd: 180, apt: 'CSBAB', skill: 'wonang' },
+    { id: 'baekcheolsan', name: '백철산', title: '백호당 도객', faction: '마교', hp: 2670, ext: 169, int: 102, def: 125, spd: 145, apt: 'SBABC', skill: 'maengho' },
+    { id: 'baeksogyo', name: '백소교', title: '백호당 조법녀', faction: '마교', hp: 2560, ext: 169, int: 100, def: 100, spd: 185, apt: 'SBABC', skill: 'hojo' },
+    { id: 'gugap', name: '구갑', title: '현무당 방패수', faction: '마교', hp: 3270, ext: 141, int: 86, def: 186, spd: 90, apt: 'BCSBA', skill: 'deungpae' },
+    { id: 'dunsan', name: '둔산', title: '현무당 철퇴수', faction: '마교', hp: 3100, ext: 132, int: 95, def: 177, spd: 100, apt: 'BCSBA', skill: 'yuseong' },
+    { id: 'gwaksam', name: '곽삼', title: '천마 광도', faction: '마교', hp: 3030, ext: 190, int: 108, def: 141, spd: 140, apt: 'BABCS', skill: 'juhwa' },
+    { id: 'yuhwa', name: '유화', title: '마교 약녀', faction: '마교', hp: 3030, ext: 106, int: 182, def: 131, spd: 140, apt: 'ABCSB', skill: 'idok' },
+    { id: 'yeonbi', name: '연비', title: '소마녀', faction: '마교', hp: 2680, ext: 153, int: 134, def: 120, spd: 155, apt: 'BABCS', skill: 'gujeol' },
+    { id: 'heukui', name: '흑의사자', title: '천마령 전령', faction: '마교', hp: 3410, ext: 118, int: 217, def: 147, spd: 145, apt: 'ABCSB', skill: 'cheonmaryeong' },
+    { id: 'jangwiwon', name: '장위원', title: '진원표국 표두', faction: '신비', hp: 3370, ext: 147, int: 89, def: 192, spd: 95, apt: 'BCSBA', skill: 'hopyo' },
+    { id: 'jeonsoho', name: '전소호', title: '표사', faction: '신비', hp: 2770, ext: 158, int: 139, def: 125, spd: 155, apt: 'CSBAB', skill: 'jinwon' },
+    { id: 'haryeong', name: '하령', title: '여표사', faction: '신비', hp: 2700, ext: 178, int: 106, def: 106, spd: 185, apt: 'CSBAB', skill: 'sain' },
+    { id: 'bokmyeon', name: '복면객', title: '정체불명의 복면객', faction: '신비', hp: 2940, ext: 184, int: 97, def: 138, spd: 135, apt: 'SBABC', skill: 'mumyeong' },
+    { id: 'hoeui', name: '회의집사', title: '회의 집사', faction: '신비', hp: 3120, ext: 98, int: 231, def: 122, spd: 160, apt: 'ABCSB', skill: 'gyeokgong' },
+    { id: 'eunmyeon', name: '은면여인', title: '은가면 여인', faction: '신비', hp: 2890, ext: 93, int: 201, def: 113, spd: 155, apt: 'BABCS', skill: 'sipmyeon' },
+    { id: 'wangdaega', name: '왕대가', title: '객잔 숙수', faction: '신비', hp: 2770, ext: 174, int: 91, def: 130, spd: 135, apt: 'BABCS', skill: 'pojeong' },
+    { id: 'nocho', name: '노초', title: '나루터 뱃사공', faction: '신비', hp: 3280, ext: 140, int: 101, def: 188, spd: 100, apt: 'ABCSB', skill: 'sunsu' },
+    { id: 'sana', name: '산아', title: '약초꾼 소녀', faction: '신비', hp: 3150, ext: 109, int: 201, def: 136, spd: 145, apt: 'CSBAB', skill: 'sinnong' },
   ];
   const UNIT = Object.fromEntries(UNITS.map(u => [u.id, u]));
 
