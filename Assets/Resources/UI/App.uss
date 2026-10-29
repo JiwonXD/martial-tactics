@@ -409,6 +409,11 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .dface { height: 66px; }
 .new { position: absolute; left: 0; top: 0; background-color: #b33a2c; color: #ffffff; font-size: 9px; -unity-font-style: bold; padding: 0 4px; }
 .dup { position: absolute; left: 0; top: 0; background-color: #1f1d1a; color: #f6f1e6; font-size: 9px; padding: 0 4px; }
+.draw-one { align-items: center; padding: 4px 0 16px 0; }
+.ucard.big { width: 180px; }
+.ucard.big .upic { height: 220px; }
+.ucard.big .un { font-size: 17px; }
+.ucard.big .new, .ucard.big .dup { font-size: 12px; padding: 1px 6px; }
 .dn { font-size: 11px; -unity-text-align: middle-center; padding: 2px 0 4px 0; }
 
 /* ===== 무인 상세 ===== */
@@ -585,6 +590,9 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 
 /* ===== 결과 ===== */
 .verdict { font-size: 44px; -unity-font-style: bold; letter-spacing: 8px; -unity-text-align: middle-center; }
+.verdict.win { color: #b33a2c; }
+.ur { margin-top: 4px; }
+.ur > .holder { width: 28px; height: 28px; border-radius: 14px; margin-right: 8px; }
 .tabs { flex-direction: row; background-color: #f6f1e6; border-bottom-width: 1.5px; border-color: #1f1d1a; }
 .tabbtn {
     flex-grow: 1;

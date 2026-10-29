@@ -378,6 +378,19 @@ namespace MartialTactics.App
             row.Add(one, ten);
             sv.Add(row);
 
+            // 1회는 한 장을 크게
+            if (app.LastDraw.Count == 1)
+            {
+                var r = app.LastDraw[0];
+                var big = Ui.El("draw-one");
+                var card = LobbyScreen.UnitCard(r.Unit, 0, 0);
+                card.AddToClassList("big");
+                card.Q(className: "portrait").Add(Ui.Lb(r.New ? "NEW" : "+1", r.New ? "new" : "dup"));
+                big.Add(card);
+                sv.Add(big);
+                body.Add(sv);
+                return;
+            }
             var grid = Ui.El("drawgrid");
             foreach (var r in app.LastDraw)
             {

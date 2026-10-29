@@ -83,7 +83,7 @@ namespace MartialTactics.App
             body.Add(Ui.Lb("장비", "lb", "section"));
             var gear = Ui.El("grid5");
             gear.style.marginTop = 6;
-            string[] gearSlots = { "무기", "옷", "신발", "보조" };
+            string[] gearSlots = { "무기", "옷", "신발", "옥패" }; // 2026-10-29: 무기 = 외공 · 옷 = 호신 · 신발 = 경공 · 옥패 = 내공
             for (int i = 0; i < gearSlots.Length; i++)
             {
                 var c = Ui.El("cell", "eq");
