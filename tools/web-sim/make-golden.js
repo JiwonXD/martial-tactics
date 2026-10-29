@@ -46,6 +46,19 @@ function matchups() {
     if (S.validateTeam(a).length || S.validateTeam(b).length) throw new Error('무작위 편성 오류');
     list.push({ name: `random${i}`, a, b });
   }
+  // 장비: 스탯과 특수효과 7종이 모두 나오도록 크게 준 시험용 값 (밸런스 수치 아님)
+  const withGear = (team, gears) => ({ ...team, slots: team.slots.map((s, i) => ({ ...s, gear: gears[i] })) });
+  const GEAR = {
+    jeong: [{ ext: 30, int: 40, crit: 0.2, critDmg: 0.3, ctrlRes: 0.5 }, { int: 30, spd: 20, skillDmg: 0.2, ctrlHit: 0.2 }, { def: 50, dmgReduce: 0.1, evade: 0.2 }],
+    ma: [{ int: 40, ctrlHit: 0.3, evade: 0.15 }, { ext: 50, crit: 0.1, critDmg: 0.5 }, { def: 40, ctrlRes: 0.4, dmgReduce: 0.15 }],
+    dol: [{ ext: 40, spd: 30, skillDmg: 0.25, evade: 0.1 }, { ext: 30, crit: 0.15 }, { def: 30, ctrlRes: 0.3 }],
+    ref: [{ int: 30, ctrlRes: 0.6, dmgReduce: 0.2 }, { ext: 20, evade: 0.25 }, { int: 20, skillDmg: 0.15, ctrlHit: 0.25 }],
+  };
+  const geared = Object.fromEntries(Object.entries(GEAR).map(([k, g]) => [k, withGear(PRESETS[k], g)]));
+  for (const [a, b] of [['jeong', 'ma'], ['ma', 'jeong'], ['dol', 'ref'], ['ref', 'dol']]) {
+    list.push({ name: `gear-${a}-${b}`, a: geared[a], b: geared[b] });
+    list.push({ name: `gear-${a}-plain-${b}`, a: geared[a], b: PRESETS[b] });
+  }
   return list;
 }
 
@@ -68,7 +81,7 @@ for (const m of matchups()) {
   for (let seed = 1; seed <= BATTLE_SEEDS; seed++) {
     const r = new S.Battle(m.a, m.b, { seed, log: true }).run();
     const text = logText(r.log);
-    for (const k of ['두전성이', '의 호위', '추가타', '사중구활', '혈맥상통', '면역', '반감', '준비가 끊김', '쓰러짐', '치명타', '되돌림', '청심결', '반탄경'])
+    for (const k of ['두전성이', '의 호위', '추가타', '사중구활', '혈맥상통', '면역', '반감', '준비가 끊김', '쓰러짐', '치명타', '되돌림', '청심결', '반탄경', '회피', '저항'])
       if (text.includes(k)) seen[k] = (seen[k] || 0) + 1;
     battles.push({ seed, winner: r.winner, reason: r.reason, rounds: r.rounds, hp: r.units.map(u => u.hp), log: sha(text) });
   }
@@ -80,6 +93,9 @@ for (const m of matchups()) {
 }
 
 const used = new Set(out.matchups.flatMap(m => [m.a, m.b].flatMap(t => t.slots.flatMap(s => [S.UNIT[s.unit].skill, ...s.skills]))));
+const gearUsed = new Set(out.matchups.flatMap(m => [m.a, m.b].flatMap(t => t.slots.flatMap(s => Object.keys(s.gear || {})))));
+const gearMissing = [...Object.keys(S.GEAR_EFFECTS), 'ext', 'int', 'def', 'spd'].filter(k => !gearUsed.has(k));
+if (gearMissing.length) throw new Error('골든에 안 들어간 장비 값: ' + gearMissing.join(', '));
 const missing = S.SKILLS.filter(s => !used.has(s.id)).map(s => s.id);
 if (missing.length) throw new Error('골든에 안 들어간 무공: ' + missing.join(', '));
 
