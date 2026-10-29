@@ -8,6 +8,8 @@ namespace MartialTactics.App
 {
     public enum LobbyTab { None, Units, Growth, Content, Gacha }
     public enum UnitsSub { List, LevelUp, Gear, Deck }
+    public enum ContentSub { Match, Dungeon }
+    public enum LobbySheet { None, Settings, IdleReward, ForgeAuto }
 
     /// <summary>
     /// 게임 화면. 씬에 아무것도 없어도 Play하면 스스로 생긴다. 모든 화면은 UI Toolkit(UiRoot).
@@ -15,7 +17,7 @@ namespace MartialTactics.App
     /// </summary>
     public sealed class GameApp : MonoBehaviour
     {
-        enum Page { Lobby, UnitDetail, CardUse, SkillPick, DeckPick, BattleReady, BattlePlay, Result }
+        enum Page { Lobby, UnitDetail, CardUse, SkillPick, DeckPick, BattleReady, BattlePlay, Result, ForgeResult, ForgeLevel, EquipSwap, DungeonEntry, GachaRates }
 
         static readonly Color Background = new Color(0.937f, 0.910f, 0.847f); // 한지 #efe8d8
 
@@ -28,8 +30,18 @@ namespace MartialTactics.App
         // 로비 상태
         internal LobbyTab Tab { get; private set; }
         internal UnitsSub Sub { get; private set; }
+        internal ContentSub Content { get; private set; }
         internal int StarFilter;  // 무인 목록 등급 거르기 (0 = 전체)
-        internal bool SettingsOpen, ConfirmReset;
+        internal LobbySheet Sheet;
+        internal bool ConfirmReset;
+
+        // 대장간 자동 뽑기 설정 (장비 시스템이 아직 게임에 없어 화면 상태만)
+        internal int KeepGrade = 3;                       // 남길 등급 컷 (Ui.GearGrades 순서)
+        internal bool EffectsOpen;
+        internal readonly HashSet<int> Effects = new HashSet<int>();
+        internal int ResearchElement;                     // 폐관수련 속성 갈래에서 보는 속성
+        internal int EquipSlot;                          // 장비 바꾸기 칸 (0 무기 · 1 옷 · 2 신발 · 3 옥패)
+        bool equipFromDetail;
         internal List<DrawResult> LastDraw = new List<DrawResult>();
 
         internal string UnitId;   // 무인 상세에서 보는 무인
@@ -93,6 +105,43 @@ namespace MartialTactics.App
 
         internal void CloseTab() => OpenTab(LobbyTab.None);
 
+        internal void OpenContent(ContentSub sub)
+        {
+            Tab = LobbyTab.Content;
+            Content = sub;
+            Go(Page.Lobby);
+        }
+
+        internal void OpenSheet(LobbySheet sheet)
+        {
+            Sheet = sheet;
+            ConfirmReset = false;
+            Refresh();
+        }
+
+        internal void BackToLobby() => Go(Page.Lobby);
+
+        // --- 대장간 · 장비 · 던전 · 뽑기 확률 (규칙은 정해졌고 수치·데이터가 아직 없는 화면) ---
+
+        internal void OpenForgeResult() { Sheet = LobbySheet.None; Go(Page.ForgeResult); }
+        internal void OpenForgeLevel() { Sheet = LobbySheet.None; Go(Page.ForgeLevel); }
+        internal void OpenDungeon() => Go(Page.DungeonEntry);
+        internal void OpenGachaRates() => Go(Page.GachaRates);
+
+        internal void OpenEquipSwap(string unitId, int slot, bool fromDetail)
+        {
+            UnitId = unitId;
+            EquipSlot = slot;
+            equipFromDetail = fromDetail;
+            Go(Page.EquipSwap);
+        }
+
+        internal void BackFromEquip()
+        {
+            if (equipFromDetail) Go(Page.UnitDetail);
+            else OpenSub(UnitsSub.Gear);
+        }
+
         internal void ResetSave()
         {
             SaveStore.Delete();
@@ -101,7 +150,8 @@ namespace MartialTactics.App
             UnitId = null;
             Opponent = null;
             result = null;
-            SettingsOpen = ConfirmReset = false;
+            Sheet = LobbySheet.None;
+            ConfirmReset = false;
             Tab = LobbyTab.None;
             Go(Page.Lobby);
         }
@@ -166,7 +216,8 @@ namespace MartialTactics.App
                     ui.Show(UnitDetailScreen.Build(Game, u,
                         back: BackToUnits,
                         pickSkill: s => { Slot = s; Go(Page.SkillPick); },
-                        cardUse: () => Go(Page.CardUse)));
+                        cardUse: () => Go(Page.CardUse),
+                        equip: s => OpenEquipSwap(u.Id, s, true)));
                     break;
                 case Page.CardUse:
                     if (u == null) { BackToUnits(); return; }
@@ -192,6 +243,14 @@ namespace MartialTactics.App
                         replay: () => Go(Page.BattlePlay),
                         confirm: OpenBattleReady));
                     break;
+                case Page.ForgeResult: ui.Show(ForgeScreens.Result(this)); break;
+                case Page.ForgeLevel: ui.Show(ForgeScreens.Level(this)); break;
+                case Page.EquipSwap:
+                    if (u == null) { BackToUnits(); return; }
+                    ui.Show(ForgeScreens.EquipSwap(this, u));
+                    break;
+                case Page.DungeonEntry: ui.Show(ContentScreens.DungeonEntry(this)); break;
+                case Page.GachaRates: ui.Show(ContentScreens.GachaRates(this)); break;
             }
         }
     }

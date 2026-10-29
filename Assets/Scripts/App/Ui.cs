@@ -8,6 +8,45 @@ namespace MartialTactics.App
     /// <summary>UI Toolkit 요소를 짧게 만드는 도우미. 클래스 이름은 Resources/UI/App.uss에 있다.</summary>
     static class Ui
     {
+        /// <summary>수치가 아직 정해지지 않은 자리.</summary>
+        public const string N = "[n]";
+
+        // 장비 (기획서 2026-10-29): 칸마다 주 스탯 하나, 등급 7개(신화는 확장용), 특수효과 7종은 영웅부터
+        public static readonly string[] GearSlots = { "무기", "옷", "신발", "옥패" };
+        public static readonly string[] GearStats = { "외공", "호신", "경공", "내공" };
+        public static readonly string[] GearGrades = { "하품", "중품", "상품", "희귀", "명품", "영웅", "전설" };
+        public static readonly string[] GearEffects = { "치명타율", "치명타 피해", "무공 피해 증가", "받는 피해 감소", "회피", "제어 적중", "제어 저항" };
+
+        /// <summary>재화 칩: 아이콘 + 수량.</summary>
+        public static VisualElement Cur(Icon.Kind icon, string amount, params string[] classes)
+        {
+            var e = El(classes);
+            e.AddToClassList("cur");
+            e.Add(new Icon(icon, 16));
+            e.Add(Lb(amount, "cur-n"));
+            return e;
+        }
+
+        /// <summary>제목 띠: 먹 바탕에 한지색 글자, 오른쪽 끝을 주홍으로 끊는다.</summary>
+        public static VisualElement Band(string text, params string[] classes)
+        {
+            var e = El(classes);
+            e.AddToClassList("band");
+            e.Add(Lb(text, "band-t"));
+            return e;
+        }
+
+        /// <summary>그림 배경을 깐 요소. 그림이 없으면 자리 표시.</summary>
+        public static VisualElement ArtBox(string art, string placeholder, params string[] classes)
+        {
+            var tex = Art.Load("Art/" + art);
+            if (tex == null) return Placeholder(placeholder, -1, -1, classes);
+            var e = El(classes);
+            e.AddToClassList("artbox");
+            e.style.backgroundImage = new StyleBackground(tex);
+            return e;
+        }
+
         public static VisualElement El(params string[] classes)
         {
             var e = new VisualElement();
