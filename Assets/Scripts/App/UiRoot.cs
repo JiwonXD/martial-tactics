@@ -8,7 +8,6 @@ namespace MartialTactics.App
 {
     /// <summary>
     /// UI Toolkit 화면을 띄우는 곳. 씬 없이 코드로 PanelSettings를 만들고, 390×844(세로 폰) 기준으로 맞춘다.
-    /// 확정된 화면(무인 상세, 전투, 결과)만 여기서 그리고, 나머지는 아직 GameApp의 IMGUI 화면이다.
     /// </summary>
     public sealed class UiRoot
     {
@@ -67,7 +66,8 @@ namespace MartialTactics.App
 #if UNITY_2023_1_OR_NEWER
             if (koreanFont == null)
             {
-                foreach (var family in new[] { "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", "Noto Sans CJK KR" })
+                // 화풍 A는 명조. Noto Serif KR은 가변 글꼴이라 이름으로 안 열리고 파일로 열면 가장 가는 굵기라 OS 명조를 쓴다. 없으면 고딕
+                foreach (var family in new[] { "HCR Batang", "Batang", "AppleMyungjo", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", "Noto Sans CJK KR" })
                 {
                     var font = FontAsset.CreateFontAsset(family, "Regular");
                     if (font == null) continue;

@@ -20,8 +20,9 @@ Unity Hub → Add → 이 폴더를 열면 된다. 처음 열 때 Unity가 만�
 ## 게임 기본 틀 (기능 확인용)
 
 - 게임 진행 로직: `Assets/Scripts/Game/` (Unity 의존 없음) — 뽑기, 승급(자유 스탯), 무공 추출·장착, 덱 편성, 전투 연결
-- 화면: `Assets/Scripts/App/GameApp.cs` (IMGUI) — 씬에 아무것도 없어도 Play하면 스스로 생긴다
-  - 처음 → 뽑기 / 무인 목록 → 무인 창 / 덱 편성 / 전투(한 합씩 기록 → 결과)
+- 화면: `Assets/Scripts/App/` (UI Toolkit, 스타일은 `Assets/Resources/UI/App.uss`, 화풍 A) — 씬에 아무것도 없어도 Play하면 스스로 생긴다
+  - 로비(하단 바: 무인 · 성장 · 대장간 · 컨텐츠 · 뽑기) → 무인 목록 → 무인 상세 → 승급·추출 / 무공 고르기, 덱 편성 → 무인 고르기, 대전 → 전투 → 결과
+  - 그림은 `Assets/Resources/Portraits/<무인 id>`(초상), `Assets/Resources/Art/lobby_bg`(배경)에서 읽고 없으면 자리 표시. 생성 그림은 확인 전까지 커밋하지 않는다
   - 진행 상황은 `Application.persistentDataPath/save.json`에 저장, 처음 화면에서 초기화
 - 아직 기획이 안 정해져 임시로 둔 것 (`GameState`에 `임시` 주석):
   - 무인 등급: 전부 3성 / 뽑기 확률: 균등 / 전투 상대: 무작위 3명 + 무작위 속성, 추가 무공 없음

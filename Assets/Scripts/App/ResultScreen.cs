@@ -13,12 +13,16 @@ namespace MartialTactics.App
             var screen = Ui.El("screen");
 
             var head = Ui.El();
-            head.style.backgroundColor = new StyleColor(UnityEngine.Color.white);
+            head.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.965f, 0.945f, 0.902f)); // 밝은 한지
+            head.style.borderBottomWidth = 1.5f;
+            head.style.borderBottomColor = new StyleColor(new UnityEngine.Color(0.12f, 0.11f, 0.10f));
             head.style.paddingTop = 32;
             head.style.paddingBottom = 16;
             head.style.alignItems = Align.Center;
             string verdict = r.Winner == Side.A ? "승리" : r.Winner == Side.B ? "패배" : "무승부";
-            head.Add(Ui.Lb(verdict, "verdict"), Ui.Lb(Reason(r), "lb"));
+            var v = Ui.Lb(verdict, "verdict");
+            if (r.Winner == Side.A) v.AddToClassList("win");
+            head.Add(v, Ui.Lb(Reason(r), "lb"));
             screen.Add(head);
 
             var summary = new ScrollView(ScrollViewMode.Vertical);
@@ -91,7 +95,7 @@ namespace MartialTactics.App
                 bar.style.flexGrow = 1;
                 bar.style.marginLeft = 6;
                 bar.style.marginRight = 6;
-                row.Add(Ui.Lb(BattleRules.PosNames[u.Pos], "lb", "pos"), nm, bar, Ui.Lb(u.Dead ? "쓰러짐" : $"{u.Hp} / {u.MaxHp}", "lb", "hp"));
+                row.Add(Ui.Lb(BattleRules.PosNames[u.Pos], "lb", "pos"), Ui.Portrait(u.Source.Id, true, "holder"), nm, bar, Ui.Lb(u.Dead ? "쓰러짐" : $"{u.Hp} / {u.MaxHp}", "lb", "hp"));
                 box.Add(row);
             }
             return box;
