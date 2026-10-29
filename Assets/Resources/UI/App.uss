@@ -921,3 +921,10 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .dd-list { align-self: flex-end; width: 150px; border-width: 1.5px; border-top-width: 0; border-color: #1f1d1a; background-color: #f6f1e6; margin-top: -6px; }
 .dd-item { height: 36px; margin: 0; padding: 0 12px; border-width: 0; border-radius: 0; border-bottom-width: 1px; border-color: rgba(31, 29, 26, 0.12); background-color: rgba(0, 0, 0, 0); color: #1f1d1a; font-size: 13px; -unity-text-align: middle-left; }
 .dd-item.on { background-color: #1f1d1a; color: #f6f1e6; -unity-font-style: bold; }
+.fold { flex-direction: row; align-items: center; height: 44px; margin: 12px 0 0 0; padding: 0 12px; border-width: 1px; border-color: rgba(31, 29, 26, 0.35); border-radius: 2px; background-color: #e6dcc8; color: #1f1d1a; }
+.fold > .lb { margin-right: 8px; }
+.checks { flex-direction: row; flex-wrap: wrap; padding: 6px 0 0 0; }
+.checkrow { width: 50%; flex-direction: row; align-items: center; height: 40px; margin: 0; padding: 0 4px; border-width: 0; background-color: rgba(0, 0, 0, 0); color: #1f1d1a; }
+.checkbox { width: 22px; height: 22px; margin-right: 8px; border-width: 1.5px; border-color: #1f1d1a; background-color: #f6f1e6; align-items: center; justify-content: center; }
+.checkbox.on { background-color: #1f1d1a; color: #f6f1e6; }
+.checkrow .chk-t { font-size: 13px; color: #1f1d1a; }

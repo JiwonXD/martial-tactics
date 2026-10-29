@@ -19,52 +19,40 @@ namespace MartialTactics.App
             var dim = LobbyScreen.Sheet(app, "자동 뽑기", out var body);
             dim.AddToClassList("bottom");
 
-            // 남길 등급: 드롭다운. 고른 등급 이상만 남고 나머지는 바로 분해
-            var keep = Ui.El("row", "sh-label");
-            keep.Add(Ui.Lb("남길 등급", "b", "grow"));
-            var drop = new Button(() => { app.GradeOpen = !app.GradeOpen; app.Refresh(); });
-            drop.AddToClassList("dropdown");
-            drop.Add(Ui.Lb($"{Ui.GearGrades[app.KeepGrade]} 이상", "dd-t"), new Icon(app.GradeOpen ? Icon.Kind.Up : Icon.Kind.Down, 14));
-            keep.Add(drop);
-            body.Add(keep);
-            if (app.GradeOpen)
-            {
-                var list = Ui.El("dd-list");
-                for (int i = Ui.GearGrades.Length - 1; i >= 0; i--)
-                {
-                    int g = i;
-                    var item = Ui.Btn($"{Ui.GearGrades[i]} 이상", () => { app.KeepGrade = g; app.GradeOpen = false; app.Refresh(); }, "dd-item");
-                    if (i == app.KeepGrade) item.AddToClassList("on");
-                    list.Add(item);
-                }
-                body.Add(list);
-            }
+            // 크럼블 자동 열기와 같은 짜임: 장비 등급 드롭다운, 한 번에 뽑는 개수 드롭다운, 펼치는 특수효과 체크
+            var grades = Enumerable.Range(0, Ui.GearGrades.Length).Reverse().Select(i => (i, $"{Ui.GearGrades[i]} 이상")).ToArray();
+            body.Add(Dropdown("장비 등급", $"{Ui.GearGrades[app.KeepGrade]} 이상", app.GradeOpen, grades, app.KeepGrade,
+                () => { app.GradeOpen = !app.GradeOpen; app.CountOpen = false; app.Refresh(); },
+                g => { app.KeepGrade = g; app.GradeOpen = false; app.Refresh(); }));
+            // 한 번에 뽑는 개수 상한은 뽑기 레벨 따라 풀리고 수치는 미정이라 칸 하나만
+            body.Add(Dropdown("한 번에", $"{Ui.N}개", app.CountOpen, new[] { (0, $"{Ui.N}개") }, 0,
+                () => { app.CountOpen = !app.CountOpen; app.GradeOpen = false; app.Refresh(); },
+                _ => { app.CountOpen = false; app.Refresh(); }));
 
-            var fx = Ui.El("row", "sh-label");
-            fx.Add(Ui.Lb("특수효과", "b", "grow"), Ui.Lb("영웅 이상", "lb"));
-            fx.Add(Ui.IconBtn(app.EffectsOpen ? Icon.Kind.Close : Icon.Kind.Plus, () => { app.EffectsOpen = !app.EffectsOpen; app.Refresh(); }, 16, "sq", "small"));
+            var fx = new Button(() => { app.EffectsOpen = !app.EffectsOpen; app.Refresh(); });
+            fx.AddToClassList("fold");
+            fx.Add(Ui.Lb("특수효과 설정", "b", "grow"), Ui.Lb($"{app.Effects.Count}", "lb"), new Icon(app.EffectsOpen ? Icon.Kind.Up : Icon.Kind.Down, 14));
             body.Add(fx);
             if (app.EffectsOpen)
             {
-                var list = Ui.El("chips-wrap");
+                var list = Ui.El("checks");
                 for (int i = 0; i < Ui.GearEffects.Length; i++)
                 {
                     int k = i;
                     bool on = app.Effects.Contains(k);
                     var c = new Button(() => { if (!app.Effects.Remove(k)) app.Effects.Add(k); app.Refresh(); });
-                    c.AddToClassList("chip");
-                    c.AddToClassList("check");
-                    if (on) c.AddToClassList("on");
-                    c.Add(new Icon(on ? Icon.Kind.Check : Icon.Kind.Plus, 12));
-                    c.Add(Ui.Lb(Ui.GearEffects[i], "chk-t"));
+                    c.AddToClassList("checkrow");
+                    var box = Ui.El("checkbox");
+                    if (on)
+                    {
+                        box.AddToClassList("on");
+                        box.Add(new Icon(Icon.Kind.Check, 14));
+                    }
+                    c.Add(box, Ui.Lb(Ui.GearEffects[i], "chk-t"));
                     list.Add(c);
                 }
                 body.Add(list);
             }
-
-            var count = Ui.El("row", "sh-label");
-            count.Add(Ui.Lb("한 번에", "b", "grow"), Ui.Lb($"{Ui.N}개", "b"));
-            body.Add(count);
 
             var row = Ui.El("row", "btnrow");
             row.Add(Ui.Btn("취소", () => app.OpenSheet(LobbySheet.None), "btn"), Ui.Btn("시작", app.OpenForgeResult, "btn", "pri"));
@@ -187,6 +175,32 @@ namespace MartialTactics.App
             }
             screen.Add(sv);
             return screen;
+        }
+
+        /// <summary>이름 + 드롭다운 한 줄. 펼치면 바로 아래에 고를 것 목록.</summary>
+        static VisualElement Dropdown(string label, string value, bool open, (int key, string text)[] options, int selected, Action toggle, Action<int> pick)
+        {
+            var box = Ui.El("dd");
+            var row = Ui.El("row", "sh-label");
+            row.Add(Ui.Lb(label, "b", "grow"));
+            var drop = new Button(toggle);
+            drop.AddToClassList("dropdown");
+            drop.Add(Ui.Lb(value, "dd-t"), new Icon(open ? Icon.Kind.Up : Icon.Kind.Down, 14));
+            row.Add(drop);
+            box.Add(row);
+            if (open)
+            {
+                var list = Ui.El("dd-list");
+                foreach (var o in options)
+                {
+                    int key = o.key;
+                    var item = Ui.Btn(o.text, () => pick(key), "dd-item");
+                    if (key == selected) item.AddToClassList("on");
+                    list.Add(item);
+                }
+                box.Add(list);
+            }
+            return box;
         }
 
         public static VisualElement Top(System.Action back, string title)
