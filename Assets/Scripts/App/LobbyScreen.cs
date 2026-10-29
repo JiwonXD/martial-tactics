@@ -128,8 +128,7 @@ namespace MartialTactics.App
             var lv = new Button(app.OpenForgeLevel) { text = $"Lv {Ui.N}" };
             lv.AddToClassList("forge-lv");
             forge.Add(lv);
-            forge.Add(Ui.Item(Icon.Kind.Forge, 54));
-            forge.Add(Ui.Lb("대장간", "forge-name"));
+            forge.Add(Ui.Item(Icon.Kind.Forge, 62));
             ring.Add(forge);
             var ore = Ui.El("forge-ore");
             ore.Add(new Icon(Icon.Kind.Ore, 12), Ui.Lb(Ui.N, "fo-n"));
