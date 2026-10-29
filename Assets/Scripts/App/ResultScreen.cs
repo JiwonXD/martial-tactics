@@ -13,7 +13,9 @@ namespace MartialTactics.App
             var screen = Ui.El("screen");
 
             var head = Ui.El();
-            head.style.backgroundColor = new StyleColor(UnityEngine.Color.white);
+            head.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.965f, 0.945f, 0.902f)); // 밝은 한지
+            head.style.borderBottomWidth = 1.5f;
+            head.style.borderBottomColor = new StyleColor(new UnityEngine.Color(0.12f, 0.11f, 0.10f));
             head.style.paddingTop = 32;
             head.style.paddingBottom = 16;
             head.style.alignItems = Align.Center;

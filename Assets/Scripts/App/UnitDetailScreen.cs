@@ -15,31 +15,26 @@ namespace MartialTactics.App
             int stars = GameState.Stars(u.Id);
 
             var screen = Ui.El("screen");
-            var top = Ui.El("topbar").Add(Ui.Btn("←", back, "back"), Ui.Lb("무인 상세", "title"));
-            screen.Add(top);
-
             var scroll = new ScrollView(ScrollViewMode.Vertical) { verticalScrollerVisibility = ScrollerVisibility.Hidden };
             scroll.style.flexGrow = 1;
             screen.Add(scroll);
 
-            // 일러스트와 겹쳐 놓인 이름 카드
+            // 일러스트와 겹쳐 놓인 이름 카드. 뒤로 버튼은 일러스트 위에 띄운다
             var head = Ui.El();
-            head.Add(Ui.Placeholder("[무인 일러스트]", -1, 200, "illust"));
+            head.Add(Ui.Portrait(u.Id, false, "illust"));
             var card = Ui.El("namecard");
-            card.style.top = 116;
-            card.Add(Ui.Lb($"{Ui.Stars(u.Id, u.Promotions)}  <color=#5f5f5a>{GameState.Rank(stars)} · 승급 {u.Promotions}/{stars}</color>", "stars"));
+            card.Add(Ui.Lb($"{Ui.Stars(u.Id, u.Promotions)}  <color=#5c564d>{GameState.Rank(stars)} · 승급 {u.Promotions}/{stars}</color>", "stars"));
             card.Add(Ui.Lb(d.Name, "uname"));
             card.Add(Ui.Lb($"{d.Title} · {d.Faction}", "lb"));
             head.Add(card);
             scroll.Add(head);
+            screen.Add(Ui.IconBtn(Icon.Kind.Back, back, 22, "back", "float"));
 
             var body = Ui.El("detail-body");
             scroll.Add(body);
 
             // 레벨은 있다고 정했지만 성장 규칙이 아직 없어 자리만 둔다
-            body.Add(Ui.El("row").Add(Ui.Lb("레벨", "b"), Ui.Lb("  성장 규칙이 정해지면 표시", "lb")));
-
-            var stats = Ui.El("grid5", "section");
+            var stats = Ui.El("grid5");
             stats.Add(Stat("체력", d.Hp, 0, true));
             int[] baseStats = { d.Ext, d.Int, d.Def, d.Spd };
             for (int k = 0; k < 4; k++) stats.Add(Stat(GameState.StatNames[k], baseStats[k] + u.Added[k], u.Added[k], false));

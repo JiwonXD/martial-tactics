@@ -1,4 +1,5 @@
 using System;
+using MartialTactics.Battle;
 using MartialTactics.Game;
 using UnityEngine.UIElements;
 
@@ -44,6 +45,38 @@ namespace MartialTactics.App
             return e;
         }
 
+        /// <summary>아이콘만 있는 버튼.</summary>
+        public static Button IconBtn(Icon.Kind kind, Action onClick, float size, params string[] classes)
+        {
+            var b = new Button(onClick);
+            foreach (var c in classes) b.AddToClassList(c);
+            b.Add(new Icon(kind, size));
+            return b;
+        }
+
+        /// <summary>무인 초상. 그림이 없으면 이름을 적은 자리 표시. face = 얼굴 쪽을 확대해 자른다 (작은 칸용).</summary>
+        public static VisualElement Portrait(string unitId, bool face, params string[] classes)
+        {
+            var e = El(classes);
+            e.AddToClassList("portrait");
+            var tex = Art.Portrait(unitId);
+            if (tex != null)
+            {
+                e.style.backgroundImage = new StyleBackground(tex);
+                e.style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Center);
+                e.style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Top, Length.Percent(face ? 12 : 0));
+                e.style.backgroundSize = face
+                    ? new BackgroundSize(Length.Percent(170), Length.Auto())
+                    : new BackgroundSize(BackgroundSizeType.Cover);
+            }
+            else
+            {
+                e.AddToClassList("ph");
+                if (!string.IsNullOrEmpty(unitId) && Catalog.Unit.TryGetValue(unitId, out var d)) e.Add(Lb(d.Name));
+            }
+            return e;
+        }
+
         /// <summary>체력 막대. ratio 0~1.</summary>
         public static VisualElement Bar(float ratio, bool foe, float width = -1)
         {
@@ -66,7 +99,7 @@ namespace MartialTactics.App
         {
             int n = GameState.Stars(unitId);
             string s = "";
-            for (int i = 0; i < n; i++) s += i < promotions ? "<color=#b3261e>★</color>" : "★";
+            for (int i = 0; i < n; i++) s += i < promotions ? "<color=#b33a2c>★</color>" : "★";
             return s;
         }
     }

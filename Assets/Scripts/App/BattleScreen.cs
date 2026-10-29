@@ -74,6 +74,8 @@ namespace MartialTactics.App
 
             // 연출: 위 상대, 가운데 발동 배너, 아래 아군. 주장이 가운데에 크게
             var arena = Ui.El("arena");
+            var bg = Art.Load("Art/lobby_bg");
+            if (bg != null) arena.style.backgroundImage = new StyleBackground(bg);
             units = new UnitView[result.Units.Count];
             var foeRow = TeamRow(Side.B, "team");
             banner = Ui.El("banner");
@@ -112,14 +114,14 @@ namespace MartialTactics.App
         VisualElement TeamRow(Side side, params string[] classes)
         {
             var row = Ui.El(classes);
-            foreach (int pos in new[] { 1, 0, 2 })
+            foreach (int pos in new[] { 0, 1, 2 }) // 왼쪽부터 주장 · 부장 · 부장
             {
                 int i = result.Units.FindIndex(u => u.Side == side && u.Pos == pos);
                 if (i < 0) continue;
                 var u = result.Units[i];
                 bool leader = pos == 0;
                 var v = new UnitView { Root = Ui.El("u") };
-                var face = Ui.Placeholder("[무인]", -1, -1, "face");
+                var face = Ui.Portrait(u.Source.Id, true, "face");
                 if (leader) face.AddToClassList("leader");
                 v.Pop = Ui.Lb("", "pop");
                 face.Add(v.Pop);
