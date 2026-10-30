@@ -30,18 +30,14 @@ namespace MartialTactics.App
 
         static VisualElement LevelRow(GameApp app, OwnedUnit u, int pos)
         {
-            var row = Ui.El("urow");
+            var row = Ui.El("urow", "plate-row");
             var face = Ui.Portrait(u.Id, true, "uface");
             if (pos >= 0) face.Add(Ui.Lb(BattleRules.PosNames[pos], pos == 0 ? "pos-seal" : "pos-seal"));
             row.Add(face);
             var t = Ui.El("grow");
             t.Add(Ui.Lb(Ui.Stars(u.Id, u.Promotions), "sr", "left"), Ui.Lb(Catalog.Unit[u.Id].Name, "b"), Ui.Lb($"Lv {Ui.N}", "lb"));
             row.Add(t);
-            var b = new Button();
-            b.AddToClassList("btn");
-            b.AddToClassList("iconbtn");
-            b.Add(Ui.Lb("레벨업", "bt"), new Icon(Icon.Kind.Book, 14), Ui.Lb(Ui.N, "bt"));
-            row.Add(b);
+            row.Add(Ui.CostBtn("레벨업", Icon.Kind.Book, Ui.N, false, null));
             string id = u.Id;
             face.RegisterCallback<ClickEvent>(_ => app.OpenUnit(id));
             return row;
@@ -78,68 +74,86 @@ namespace MartialTactics.App
         // 한 번에 하나, 시간이 걸린다
         public static void Research(GameApp app, VisualElement body)
         {
+            // 크럼블 노움 연구소 짜임: 위에 노드 나무(누르면 고름), 아래 고른 노드 상세 패널
             var sv = LobbyScreen.Scroll();
-            var hero = Ui.ArtBox("research_hero", "[폐관수련 그림]", "hero", "short");
-            var cap = Ui.El("hero-cap");
-            cap.Add(Ui.Cur(Icon.Kind.Pill, Ui.N), Ui.Cur(Icon.Kind.Pill, Ui.N, "rare"));
-            hero.Add(cap);
-            sv.Add(hero);
-
-            // 진행 중인 수련 하나
-            var now = Ui.El("research-now");
-            now.Add(new Icon(Icon.Kind.Clock, 18), Ui.Lb($"외공 Lv {Ui.N}", "b", "grow"), Ui.Lb($"{Ui.N}:{Ui.N}:{Ui.N}", "b"));
-            Frame.On(now, Frame.Bronze, Frame.Vermilion, 3, 7);
-            sv.Add(now);
-
             var gwan = Ui.El("row", "gwan");
             gwan.Add(Ui.IconBtn(Icon.Kind.Prev, null, 18, "sq", "small"), Ui.Lb("제 1관", "gwan-t"), Ui.IconBtn(Icon.Kind.Next, null, 18, "sq", "small"));
             sv.Add(gwan);
 
-            // 사다리(가운데 줄) + 곁가지(오른쪽)
+            // 노드 번호: 0~4 기본 수련 사다리, 5~6 특별 수련 곁가지, 7~11 속성 갈래
             var tree = Ui.El("tree");
-            var ladder = Ui.El("ladder");
-            ladder.Add(Ui.El("ladder-line"));
             for (int i = 0; i < BaseNodes.Length; i++)
             {
-                var row = Ui.El("tnode-row");
-                row.Add(Node(BaseNodes[i], $"+{Ui.N}%", i == 0, false));
+                var row = Ui.El("t-row");
+                row.Add(Ui.El("t-side"));
+                row.Add(Tile(app, i, BaseNodes[i], false));
+                var side = Ui.El("t-side");
                 if (i == 1 || i == 3)
                 {
-                    row.Add(Ui.El("branch-line"));
-                    row.Add(Node(i == 1 ? "방치 시간" : "방치 보상", i == 1 ? $"+{Ui.N}시간" : $"+{Ui.N}%", false, true));
+                    side.Add(Ui.El("t-hline"));
+                    side.Add(Tile(app, i == 1 ? 5 : 6, i == 1 ? "방치 시간" : "방치 보상", true));
                 }
-                ladder.Add(row);
+                row.Add(side);
+                tree.Add(row);
+                tree.Add(Ui.El("t-vline"));
             }
-            tree.Add(ladder);
+            var els = Ui.El("t-els");
+            for (int i = 0; i < BattleRules.Elements.Length; i++) els.Add(Tile(app, 7 + i, BattleRules.Elements[i], false, true));
+            tree.Add(els);
             sv.Add(tree);
-
-            // 속성 갈래
-            sv.Add(Ui.Band("속성 갈래", "sub-band"));
-            var el = Ui.El("elements", "tight");
-            for (int i = 0; i < BattleRules.Elements.Length; i++)
-            {
-                int k = i;
-                var b = Ui.Btn(BattleRules.Elements[i], () => { app.ResearchElement = k; app.Refresh(); }, "elem", "mid");
-                if (app.ResearchElement == i) b.AddToClassList("on");
-                el.Add(b);
-            }
-            sv.Add(el);
-            var branch = Ui.El("chips-wrap", "nodes");
-            foreach (var n in new[] { "외공", "내공", "호신", "경공" }) branch.Add(Node(n, $"+{Ui.N}%", false, false, true));
-            branch.Add(Node("상극 우위", $"+{Ui.N}%p", false, false, true));
-            sv.Add(branch);
             body.Add(sv);
+
+            body.Add(Detail(app));
         }
 
-        static VisualElement Node(string name, string value, bool active, bool special, bool small = false)
+        static VisualElement Tile(GameApp app, int index, string name, bool special, bool small = false)
         {
-            var n = Ui.El("tnode");
-            if (active) n.AddToClassList("active");
-            if (special) n.AddToClassList("special");
-            if (small) n.AddToClassList("small");
-            n.Add(Ui.Lb(name, "tn-name"), Ui.Lb(value, "tn-v"), Ui.Lb($"Lv {Ui.N}/{Ui.N}", "tn-lv"));
-            if (!small) Frame.On(n, special ? Frame.Vermilion : Frame.Bronze, special ? Frame.Vermilion : Frame.Ink, 3, 6);
-            return n;
+            var t = new Button(() => { app.ResearchNode = index; app.Refresh(); });
+            t.AddToClassList("tile");
+            if (special) t.AddToClassList("special");
+            if (small) t.AddToClassList("small");
+            if (app.ResearchNode == index) t.AddToClassList("on");
+            t.Add(Ui.Lb(name, "tile-name"));
+            var prog = Ui.El("tile-prog");
+            prog.Add(Ui.Lb($"{Ui.N}/{Ui.N}", "tile-n"));
+            t.Add(prog);
+            return t;
+        }
+
+        // 고른 노드 상세: 이름, 효과 지금 > 다음, 수련 시간, 수련 시작(비용). 특별 수련은 영단, 나머지는 단약
+        static VisualElement Detail(GameApp app)
+        {
+            int n = app.ResearchNode;
+            string name, effect;
+            if (n < 5) { name = $"{BaseNodes[n]} 수련"; effect = $"{BaseNodes[n]} 증가"; }
+            else if (n < 7) { name = n == 5 ? "방치 시간" : "방치 보상"; effect = n == 5 ? "최대 시간" : "보상 양"; }
+            else { name = $"{BattleRules.Elements[n - 7]} 갈래"; effect = $"{BattleRules.Elements[n - 7]} 덱 4스탯 · 상극 우위"; }
+            bool special = n == 5 || n == 6;
+
+            var panel = Ui.El("detail-panel");
+            var top = Ui.El("row");
+            var icon = Ui.El("dp-icon");
+            icon.Add(Ui.Lb(name.Substring(0, 1), "dp-glyph"));
+            top.Add(icon);
+            var info = Ui.El("grow");
+            info.Add(Ui.Lb(name, "dp-name"));
+            var eff = Ui.El("row", "dp-eff");
+            eff.Add(Ui.Lb(effect, "dp-eff-t", "grow"), Ui.Lb($"{Ui.N}%", "dp-now"), new Icon(Icon.Kind.Next, 14), Ui.Lb($"{Ui.N}%", "dp-next"));
+            info.Add(eff);
+            top.Add(info);
+            panel.Add(top);
+            var bottom = Ui.El("row", "dp-bottom");
+            var time = Ui.El("dp-time");
+            time.Add(Ui.Lb("수련 시간", "dp-time-l"));
+            var tr = Ui.El("row");
+            tr.Add(Ui.Item(Icon.Kind.Clock, 18), Ui.Lb($"{Ui.N}:{Ui.N}:{Ui.N}", "dp-time-n"));
+            time.Add(tr);
+            bottom.Add(time);
+            var start = Ui.CostBtn("수련 시작", Icon.Kind.Pill, Ui.N, true, null, special ? "pill2" : "pill");
+            start.AddToClassList("dp-start");
+            bottom.Add(start);
+            panel.Add(bottom);
+            return panel;
         }
     }
 }

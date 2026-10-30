@@ -17,14 +17,84 @@ namespace MartialTactics.App
         public static readonly string[] GearGrades = { "하품", "중품", "상품", "희귀", "명품", "영웅", "전설" };
         public static readonly string[] GearEffects = { "치명타율", "치명타 피해", "무공 피해 증가", "받는 피해 감소", "회피", "제어 적중", "제어 저항" };
 
-        /// <summary>재화 칩: 아이콘 + 수량.</summary>
+        /// <summary>재화 칩: 아이콘 + 수량. "rare" 클래스는 영단.</summary>
         public static VisualElement Cur(Icon.Kind icon, string amount, params string[] classes)
         {
             var e = El(classes);
             e.AddToClassList("cur");
-            e.Add(new Icon(icon, 16));
+            e.Add(Item(icon, 20, Array.IndexOf(classes, "rare") >= 0 ? "pill2" : null));
             e.Add(Lb(amount, "cur-n"));
             return e;
+        }
+
+        /// <summary>그림 아이콘 (Resources/UI/Art/icon_*). 그림이 없으면 선 아이콘.</summary>
+        public static VisualElement Item(Icon.Kind kind, float size, string art = null)
+        {
+            var tex = Art.Load("UI/Art/icon_" + (art ?? ArtName(kind)));
+            if (tex == null) return new Icon(kind, size);
+            var e = new VisualElement { pickingMode = PickingMode.Ignore };
+            e.style.width = size;
+            e.style.height = size;
+            e.style.flexShrink = 0;
+            e.style.backgroundImage = new StyleBackground(tex);
+            e.AddToClassList("icon");
+            e.AddToClassList("item");
+            return e;
+        }
+
+        /// <summary>
+        /// 아이템 타일 (보상·결과·상점·장비 칸 공통): 둥근 면 + 위쪽 광택 + 그림(가장자리를 살짝 넘침) + 오른쪽 아래 개수.
+        /// grade = 등급 클래스 g0~g6 (등급 색은 아직 정하지 않아 지금은 굵기·광택만), badge = 왼쪽 위 작은 표시(NEW, Lv 등).
+        /// </summary>
+        public static VisualElement Tile(string art, Icon.Kind fallback, string count, int grade = -1, string badge = null, float size = 64)
+        {
+            var t = El("tile-i");
+            t.style.width = size;
+            t.style.height = size;
+            if (grade >= 0) t.AddToClassList("g" + grade);
+            t.Add(El("tile-gloss"));
+            var pic = Item(fallback, size * 0.86f, art);
+            pic.AddToClassList("tile-pic");
+            t.Add(pic);
+            if (count != null) t.Add(Lb(count, "tile-count"));
+            if (badge != null) t.Add(Lb(badge, "tile-badge"));
+            return t;
+        }
+
+        /// <summary>비용 버튼: 위에 동사, 아래에 (아이콘 비용). pri = 주 버튼(한 화면에 하나).</summary>
+        public static Button CostBtn(string verb, Icon.Kind icon, string cost, bool pri, Action onClick, string art = null)
+        {
+            var b = new Button(onClick);
+            b.AddToClassList("btn");
+            b.AddToClassList("costbtn");
+            if (pri) b.AddToClassList("pri");
+            b.Add(Lb(verb, "cb-verb"));
+            var c = El("row", "cb-cost");
+            c.Add(Item(icon, 18, art), Lb(cost, "cb-n"));
+            b.Add(c);
+            return b;
+        }
+
+        static string ArtName(Icon.Kind kind)
+        {
+            switch (kind)
+            {
+                case Icon.Kind.Units: return "units";
+                case Icon.Kind.Growth: return "growth";
+                case Icon.Kind.Content: return "content";
+                case Icon.Kind.Gacha: return "gacha";
+                case Icon.Kind.Forge: return "forge";
+                case Icon.Kind.Coin: return "coin";
+                case Icon.Kind.Ticket: return "ticket";
+                case Icon.Kind.Book: return "book";
+                case Icon.Kind.Ore: return "ore";
+                case Icon.Kind.Flame: return "flame";
+                case Icon.Kind.Pill: return "pill";
+                case Icon.Kind.Chest: return "chest";
+                case Icon.Kind.Clock: return "clock";
+                case Icon.Kind.Gear: return "gear";
+                default: return kind.ToString().ToLowerInvariant();
+            }
         }
 
         /// <summary>제목 띠: 먹 바탕에 한지색 글자, 오른쪽 끝을 주홍으로 끊는다.</summary>

@@ -9,7 +9,7 @@ namespace MartialTactics.App
     public enum LobbyTab { None, Units, Growth, Content, Gacha }
     public enum UnitsSub { List, LevelUp, Gear, Deck }
     public enum ContentSub { Match, Dungeon }
-    public enum LobbySheet { None, Settings, IdleReward, ForgeAuto }
+    public enum LobbySheet { None, Settings, IdleReward, ForgeAuto, ForgeResult }
 
     /// <summary>
     /// 게임 화면. 씬에 아무것도 없어도 Play하면 스스로 생긴다. 모든 화면은 UI Toolkit(UiRoot).
@@ -17,7 +17,7 @@ namespace MartialTactics.App
     /// </summary>
     public sealed class GameApp : MonoBehaviour
     {
-        enum Page { Lobby, UnitDetail, CardUse, SkillPick, DeckPick, BattleReady, BattlePlay, Result, ForgeResult, ForgeLevel, EquipSwap, DungeonEntry, GachaRates }
+        enum Page { Lobby, UnitDetail, CardUse, SkillPick, DeckPick, BattleReady, BattlePlay, Result, ForgeLevel, EquipSwap, DungeonEntry, GachaRates }
 
         static readonly Color Background = new Color(0.937f, 0.910f, 0.847f); // 한지 #efe8d8
 
@@ -37,9 +37,9 @@ namespace MartialTactics.App
 
         // 대장간 자동 뽑기 설정 (장비 시스템이 아직 게임에 없어 화면 상태만)
         internal int KeepGrade = 3;                       // 남길 등급 컷 (Ui.GearGrades 순서)
-        internal bool EffectsOpen;
+        internal bool EffectsOpen, GradeOpen, CountOpen;
         internal readonly HashSet<int> Effects = new HashSet<int>();
-        internal int ResearchElement;                     // 폐관수련 속성 갈래에서 보는 속성
+        internal int ResearchElement, ResearchNode;                     // 폐관수련 속성 갈래에서 보는 속성
         internal int EquipSlot;                          // 장비 바꾸기 칸 (0 무기 · 1 옷 · 2 신발 · 3 옥패)
         bool equipFromDetail;
         internal List<DrawResult> LastDraw = new List<DrawResult>();
@@ -52,6 +52,7 @@ namespace MartialTactics.App
 
         UiRoot ui;
         BattleScreen battle;
+        internal LobbyStage Stage;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
@@ -123,7 +124,7 @@ namespace MartialTactics.App
 
         // --- 대장간 · 장비 · 던전 · 뽑기 확률 (규칙은 정해졌고 수치·데이터가 아직 없는 화면) ---
 
-        internal void OpenForgeResult() { Sheet = LobbySheet.None; Go(Page.ForgeResult); }
+        internal void OpenForgeResult() { Tab = LobbyTab.None; Sheet = LobbySheet.ForgeResult; Go(Page.Lobby); }
         internal void OpenForgeLevel() { Sheet = LobbySheet.None; Go(Page.ForgeLevel); }
         internal void OpenDungeon() => Go(Page.DungeonEntry);
         internal void OpenGachaRates() => Go(Page.GachaRates);
@@ -199,12 +200,17 @@ namespace MartialTactics.App
         {
             if (dirty) Sync();
             if (page == Page.BattlePlay) battle?.Tick(Time.deltaTime);
+            if (page == Page.Lobby && Tab == LobbyTab.None) Stage?.Tick(Time.deltaTime);
         }
+
+        // 메뉴 안쪽 화면은 위 띠 + 제목 띠 + 하단 바(가운데 ↩)로 감싼다
+        void Shell(string title, UnityEngine.UIElements.VisualElement content, Action back) => ui.Show(LobbyScreen.Shell(this, title, content, back));
 
         void Sync()
         {
             dirty = false;
             battle = null;
+            Stage = null;
             var u = Game.Find(UnitId);
             switch (page)
             {
@@ -213,26 +219,26 @@ namespace MartialTactics.App
                     break;
                 case Page.UnitDetail:
                     if (u == null) { BackToUnits(); return; }
-                    ui.Show(UnitDetailScreen.Build(Game, u,
+                    Shell(null, UnitDetailScreen.Build(Game, u,
                         back: BackToUnits,
                         pickSkill: s => { Slot = s; Go(Page.SkillPick); },
                         cardUse: () => Go(Page.CardUse),
-                        equip: s => OpenEquipSwap(u.Id, s, true)));
+                        equip: s => OpenEquipSwap(u.Id, s, true)), BackToUnits);
                     break;
                 case Page.CardUse:
                     if (u == null) { BackToUnits(); return; }
-                    ui.Show(CardUseScreen.Build(this, u));
+                    Shell("승급 · 추출", CardUseScreen.Build(this, u), BackToDetail);
                     break;
                 case Page.SkillPick:
                     if (u == null) { BackToUnits(); return; }
-                    ui.Show(SkillPickScreen.Build(this, u, Slot));
+                    Shell($"무공 {Slot + 2}칸", SkillPickScreen.Build(this, u, Slot), BackToDetail);
                     break;
                 case Page.DeckPick:
-                    ui.Show(DeckPickScreen.Build(this));
+                    Shell(BattleRules.PosNames[DeckPos], DeckPickScreen.Build(this), BackToDeck);
                     break;
                 case Page.BattleReady:
                     if (Opponent == null) Opponent = Game.RandomOpponent();
-                    ui.Show(BattleReadyScreen.Build(this));
+                    Shell("대전", BattleReadyScreen.Build(this), CloseTab);
                     break;
                 case Page.BattlePlay:
                     battle = new BattleScreen(result, () => Go(Page.Result));
@@ -243,14 +249,13 @@ namespace MartialTactics.App
                         replay: () => Go(Page.BattlePlay),
                         confirm: OpenBattleReady));
                     break;
-                case Page.ForgeResult: ui.Show(ForgeScreens.Result(this)); break;
-                case Page.ForgeLevel: ui.Show(ForgeScreens.Level(this)); break;
+                case Page.ForgeLevel: Shell("대장간 레벨", ForgeScreens.Level(this), BackToLobby); break;
                 case Page.EquipSwap:
                     if (u == null) { BackToUnits(); return; }
-                    ui.Show(ForgeScreens.EquipSwap(this, u));
+                    Shell($"{Ui.GearSlots[EquipSlot]} 바꾸기", ForgeScreens.EquipSwap(this, u), BackFromEquip);
                     break;
-                case Page.DungeonEntry: ui.Show(ContentScreens.DungeonEntry(this)); break;
-                case Page.GachaRates: ui.Show(ContentScreens.GachaRates(this)); break;
+                case Page.DungeonEntry: Shell(null, ContentScreens.DungeonEntry(this), () => OpenContent(ContentSub.Dungeon)); break;
+                case Page.GachaRates: Shell("확률 정보", ContentScreens.GachaRates(this), () => OpenTab(LobbyTab.Gacha)); break;
             }
         }
     }

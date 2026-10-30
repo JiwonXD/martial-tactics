@@ -13,16 +13,19 @@ namespace MartialTactics.App
             var screen = Ui.El("screen");
 
             var head = Ui.El();
-            head.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.965f, 0.945f, 0.902f)); // 밝은 한지
-            head.style.borderBottomWidth = 1.5f;
-            head.style.borderBottomColor = new StyleColor(new UnityEngine.Color(0.12f, 0.11f, 0.10f));
+            head.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.078f, 0.2f, 0.204f)); // 패널 #143334
             head.style.paddingTop = 32;
             head.style.paddingBottom = 16;
             head.style.alignItems = Align.Center;
             string verdict = r.Winner == Side.A ? "승리" : r.Winner == Side.B ? "패배" : "무승부";
-            var v = Ui.Lb(verdict, "verdict");
-            if (r.Winner == Side.A) v.AddToClassList("win");
-            head.Add(v, Ui.Lb(Reason(r), "lb"));
+            // 승패 연출: 기울어진 큰 붓 글씨 도장, 이기면 뒤에 빛줄기
+            var v = Ui.Lb(r.Winner == Side.A ? "勝" : r.Winner == Side.B ? "敗" : "和", "verdict", "stamp");
+            if (r.Winner == Side.A)
+            {
+                v.AddToClassList("win");
+                head.Add(new Popup.Rays());
+            }
+            head.Add(v, Ui.Lb(verdict, "verdict-sub"), Ui.Lb(Reason(r), "lb"));
             screen.Add(head);
 
             var summary = new ScrollView(ScrollViewMode.Vertical);
@@ -81,24 +84,39 @@ namespace MartialTactics.App
             return (double)us.Sum(u => u.Hp) / us.Sum(u => u.MaxHp);
         }
 
+        // 전보식 팀 카드 (삼국지 전략판 전보 참고): 무인마다 초상 · 남은 체력 · 발동 · 피해 · 회복. 아군은 경험치 ▲
         static VisualElement Team(BattleResult r, Side side, string title)
         {
-            var box = Ui.El();
-            box.style.marginBottom = 14;
-            box.Add(Ui.Lb(title, "b"));
+            var box = Ui.El("rep-team");
+            if (side == Side.B) box.AddToClassList("foe");
+            box.Add(Ui.Lb(title, "rep-title"));
+            var row = Ui.El("row", "rep-row");
             foreach (var u in r.Units.Where(x => x.Side == side).OrderBy(x => x.Pos))
             {
-                var row = Ui.El("ur");
-                var nm = Ui.Lb(u.Name, "nm");
-                if (u.Pos == 0) nm.AddToClassList("b");
-                var bar = Ui.Bar((float)u.Hp / u.MaxHp, side == Side.B);
-                bar.style.flexGrow = 1;
-                bar.style.marginLeft = 6;
-                bar.style.marginRight = 6;
-                row.Add(Ui.Lb(BattleRules.PosNames[u.Pos], "lb", "pos"), Ui.Portrait(u.Source.Id, true, "holder"), nm, bar, Ui.Lb(u.Dead ? "쓰러짐" : $"{u.Hp} / {u.MaxHp}", "lb", "hp"));
-                box.Add(row);
+                var card = Ui.El("rep-card");
+                if (u.Pos == 0) card.AddToClassList("leader");
+                if (u.Dead) card.AddToClassList("dead");
+                var face = Ui.Portrait(u.Source.Id, true, "rep-face");
+                face.Add(Ui.Lb(BattleRules.PosNames[u.Pos], "pos-seal"));
+                face.Add(Skin.CardFrame(u.Pos == 0));
+                card.Add(face, Ui.Lb(u.Name, "un"));
+                card.Add(Ui.Bar((float)u.Hp / u.MaxHp, side == Side.B));
+                int procs = u.Rec.Procs.Values.Sum();
+                var st = Ui.El("rep-stats");
+                st.Add(Stat("발동", procs), Stat("피해", u.Rec.Dealt), Stat("회복", u.Rec.Healed));
+                card.Add(st);
+                if (side == Side.A) card.Add(Ui.Lb($"경험치 ▲{Ui.N}", "rep-exp"));
+                row.Add(card);
             }
+            box.Add(row);
             return box;
+        }
+
+        static VisualElement Stat(string name, int v)
+        {
+            var e = Ui.El("row", "rep-stat");
+            e.Add(Ui.Lb(name, "lb", "grow"), Ui.Lb(v > 0 ? $"{v}" : "–", "rep-v"));
+            return e;
         }
 
         // 전투 엔진이 이미 내는 집계(발동 횟수, 무공별 피해·회복)를 아군 무인별로
