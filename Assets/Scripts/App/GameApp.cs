@@ -52,6 +52,7 @@ namespace MartialTactics.App
 
         UiRoot ui;
         BattleScreen battle;
+        internal LobbyStage Stage;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
@@ -199,12 +200,17 @@ namespace MartialTactics.App
         {
             if (dirty) Sync();
             if (page == Page.BattlePlay) battle?.Tick(Time.deltaTime);
+            if (page == Page.Lobby && Tab == LobbyTab.None) Stage?.Tick(Time.deltaTime);
         }
+
+        // 메뉴 안쪽 화면은 위 띠 + 제목 띠 + 하단 바(가운데 ↩)로 감싼다
+        void Shell(string title, UnityEngine.UIElements.VisualElement content, Action back) => ui.Show(LobbyScreen.Shell(this, title, content, back));
 
         void Sync()
         {
             dirty = false;
             battle = null;
+            Stage = null;
             var u = Game.Find(UnitId);
             switch (page)
             {
@@ -213,26 +219,26 @@ namespace MartialTactics.App
                     break;
                 case Page.UnitDetail:
                     if (u == null) { BackToUnits(); return; }
-                    ui.Show(UnitDetailScreen.Build(Game, u,
+                    Shell(null, UnitDetailScreen.Build(Game, u,
                         back: BackToUnits,
                         pickSkill: s => { Slot = s; Go(Page.SkillPick); },
                         cardUse: () => Go(Page.CardUse),
-                        equip: s => OpenEquipSwap(u.Id, s, true)));
+                        equip: s => OpenEquipSwap(u.Id, s, true)), BackToUnits);
                     break;
                 case Page.CardUse:
                     if (u == null) { BackToUnits(); return; }
-                    ui.Show(CardUseScreen.Build(this, u));
+                    Shell("승급 · 추출", CardUseScreen.Build(this, u), BackToDetail);
                     break;
                 case Page.SkillPick:
                     if (u == null) { BackToUnits(); return; }
-                    ui.Show(SkillPickScreen.Build(this, u, Slot));
+                    Shell($"무공 {Slot + 2}칸", SkillPickScreen.Build(this, u, Slot), BackToDetail);
                     break;
                 case Page.DeckPick:
-                    ui.Show(DeckPickScreen.Build(this));
+                    Shell(BattleRules.PosNames[DeckPos], DeckPickScreen.Build(this), BackToDeck);
                     break;
                 case Page.BattleReady:
                     if (Opponent == null) Opponent = Game.RandomOpponent();
-                    ui.Show(BattleReadyScreen.Build(this));
+                    Shell("대전", BattleReadyScreen.Build(this), CloseTab);
                     break;
                 case Page.BattlePlay:
                     battle = new BattleScreen(result, () => Go(Page.Result));
@@ -243,13 +249,13 @@ namespace MartialTactics.App
                         replay: () => Go(Page.BattlePlay),
                         confirm: OpenBattleReady));
                     break;
-                case Page.ForgeLevel: ui.Show(ForgeScreens.Level(this)); break;
+                case Page.ForgeLevel: Shell("대장간 레벨", ForgeScreens.Level(this), BackToLobby); break;
                 case Page.EquipSwap:
                     if (u == null) { BackToUnits(); return; }
-                    ui.Show(ForgeScreens.EquipSwap(this, u));
+                    Shell($"{Ui.GearSlots[EquipSlot]} 바꾸기", ForgeScreens.EquipSwap(this, u), BackFromEquip);
                     break;
-                case Page.DungeonEntry: ui.Show(ContentScreens.DungeonEntry(this)); break;
-                case Page.GachaRates: ui.Show(ContentScreens.GachaRates(this)); break;
+                case Page.DungeonEntry: Shell(null, ContentScreens.DungeonEntry(this), () => OpenContent(ContentSub.Dungeon)); break;
+                case Page.GachaRates: Shell("확률 정보", ContentScreens.GachaRates(this), () => OpenTab(LobbyTab.Gacha)); break;
             }
         }
     }

@@ -108,7 +108,31 @@ namespace MartialTactics.App
             logPanel.Add(head, logBody);
             Root.Add(logPanel);
 
+            Root.Add(VsCut());
             Step();
+            wait = 1.4f; // VS 컷인이 끝난 뒤 진행
+        }
+
+        readonly Floaters floaters = new Floaters();
+
+        // 대전 시작 VS 컷인: 양 주장이 사선으로 들어오고 가운데 붓 획 "對"가 찍힌 뒤 걷힌다
+        VisualElement VsCut()
+        {
+            var cut = Ui.El("vs-cut");
+            cut.pickingMode = PickingMode.Ignore;
+            var a = result.Units.Find(u => u.Side == Side.A && u.Pos == 0);
+            var b = result.Units.Find(u => u.Side == Side.B && u.Pos == 0);
+            var left = Ui.Portrait(a.Source.Id, false, "vs-l");
+            var right = Ui.Portrait(b.Source.Id, false, "vs-r");
+            left.Add(Ui.Lb(a.Name, "vs-name"));
+            right.Add(Ui.Lb(b.Name, "vs-name"));
+            var mark = Ui.Lb("對", "vs-mark");
+            cut.Add(left, right, mark);
+            cut.schedule.Execute(() => cut.AddToClassList("in")).StartingIn(30);
+            cut.schedule.Execute(() => mark.AddToClassList("in")).StartingIn(380);
+            cut.schedule.Execute(() => cut.AddToClassList("out")).StartingIn(1150);
+            cut.schedule.Execute(() => cut.RemoveFromHierarchy()).StartingIn(1500);
+            return cut;
         }
 
         VisualElement TeamRow(Side side, params string[] classes)
@@ -143,12 +167,7 @@ namespace MartialTactics.App
         /// <summary>GameApp.Update에서 매 프레임 부른다.</summary>
         public void Tick(float dt)
         {
-            foreach (var v in units)
-            {
-                if (v == null || v.PopTime <= 0) continue;
-                v.PopTime -= dt;
-                v.Pop.style.opacity = Math.Max(0, Math.Min(1, v.PopTime / 0.3f));
-            }
+            floaters.Tick(dt);
             if (done) return;
             wait -= dt * speed;
             if (wait > 0) return;
@@ -178,13 +197,7 @@ namespace MartialTactics.App
                 v.Chips.Clear();
                 foreach (var k in line.Status[i]) v.Chips.Add(Ui.Lb(BattleRules.StatusNames[k], "sta"));
                 int delta = hp - prev[i];
-                if (delta != 0)
-                {
-                    v.Pop.text = delta > 0 ? $"+{delta}" : $"−{-delta}";
-                    v.Pop.EnableInClassList("heal", delta > 0);
-                    v.Pop.style.opacity = 1;
-                    v.PopTime = 0.9f;
-                }
+                if (delta != 0) floaters.Spawn(v.Pop.parent, delta); // 데미지 숫자를 초상 위에 띄운다
             }
 
             float a = Ratio(line, Side.A), b = Ratio(line, Side.B);

@@ -42,6 +42,39 @@ namespace MartialTactics.App
             return e;
         }
 
+        /// <summary>
+        /// 아이템 타일 (보상·결과·상점·장비 칸 공통): 둥근 면 + 위쪽 광택 + 그림(가장자리를 살짝 넘침) + 오른쪽 아래 개수.
+        /// grade = 등급 클래스 g0~g6 (등급 색은 아직 정하지 않아 지금은 굵기·광택만), badge = 왼쪽 위 작은 표시(NEW, Lv 등).
+        /// </summary>
+        public static VisualElement Tile(string art, Icon.Kind fallback, string count, int grade = -1, string badge = null, float size = 64)
+        {
+            var t = El("tile-i");
+            t.style.width = size;
+            t.style.height = size;
+            if (grade >= 0) t.AddToClassList("g" + grade);
+            t.Add(El("tile-gloss"));
+            var pic = Item(fallback, size * 0.86f, art);
+            pic.AddToClassList("tile-pic");
+            t.Add(pic);
+            if (count != null) t.Add(Lb(count, "tile-count"));
+            if (badge != null) t.Add(Lb(badge, "tile-badge"));
+            return t;
+        }
+
+        /// <summary>비용 버튼: 위에 동사, 아래에 (아이콘 비용). pri = 주 버튼(한 화면에 하나).</summary>
+        public static Button CostBtn(string verb, Icon.Kind icon, string cost, bool pri, Action onClick, string art = null)
+        {
+            var b = new Button(onClick);
+            b.AddToClassList("btn");
+            b.AddToClassList("costbtn");
+            if (pri) b.AddToClassList("pri");
+            b.Add(Lb(verb, "cb-verb"));
+            var c = El("row", "cb-cost");
+            c.Add(Item(icon, 18, art), Lb(cost, "cb-n"));
+            b.Add(c);
+            return b;
+        }
+
         static string ArtName(Icon.Kind kind)
         {
             switch (kind)

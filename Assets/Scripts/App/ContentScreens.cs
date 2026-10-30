@@ -132,8 +132,12 @@ namespace MartialTactics.App
 
             var panel = Ui.El("gacha-panel");
             var btns = Ui.El("row", "gacha-btns");
-            btns.Add(DrawBtn("1회", () => { app.LastDraw = app.Game.Draw(1); app.Save(); app.Refresh(); }));
-            btns.Add(DrawBtn("10회", () => { app.LastDraw = app.Game.Draw(10); app.Save(); app.Refresh(); }));
+            // 주 버튼은 하나: 10회만 주홍, 1회는 보조
+            var one = Ui.CostBtn("1회", Icon.Kind.Ticket, Ui.N, false, () => { app.LastDraw = app.Game.Draw(1); app.Save(); app.Refresh(); });
+            var ten = Ui.CostBtn("10회", Icon.Kind.Ticket, Ui.N, true, () => { app.LastDraw = app.Game.Draw(10); app.Save(); app.Refresh(); });
+            one.AddToClassList("drawbtn");
+            ten.AddToClassList("drawbtn");
+            btns.Add(one, ten);
             panel.Add(btns);
             body.Add(panel);
 

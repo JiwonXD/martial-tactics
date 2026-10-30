@@ -696,3 +696,115 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 /* 로비 방치 보상: 받침 없이 상자 그림만 */
 .round { width: 60px; height: 60px; border-width: 0; background-color: rgba(0, 0, 0, 0); }
 .round > .dot { right: 2px; top: 2px; }
+
+/* ================= 2026-10-30 플레이 영상 리뷰 반영: 공통 부품 · 고정 틀 · 연출 ================= */
+/* 층 4단: 바탕(가장 어두운 비취 + 사선 무늬, UiRoot) → 패널 #17393a → 우물 #0b1f20 → 강조(주홍·금). 테두리 대신 면 */
+.shell-body, .shell > .screen { background-color: rgba(0, 0, 0, 0); max-width: none; }
+.pscroll { background-color: rgba(0, 0, 0, 0); }
+
+/* 위 띠: 모든 화면 같음 */
+.ltop { height: 60px; flex-shrink: 0; padding: 0 8px 0 8px; background-color: rgba(11, 26, 27, 0.82); }
+.stage > .ltop { background-color: rgba(11, 26, 27, 0.55); }
+/* 패널 제목 띠 (왼쪽 주홍 끝) */
+.title-band { height: 40px; flex-shrink: 0; flex-direction: row; align-items: center; padding: 0 12px; background-color: #17393a; border-left-width: 6px; border-color: #f0832b; }
+.tb-title { font-size: 17px; -unity-font-style: bold; color: #fff5df; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+
+/* 하위 탭: 하단 바와 같은 폭의 한 띠, 칸 사이 선 없이 고른 칸만 밝은 면 */
+.subs { height: 44px; padding: 0; background-color: #17393a; }
+.sub { margin: 0; border-radius: 0; background-color: rgba(0, 0, 0, 0); }
+.sub.on { background-color: #3f9488; }
+
+/* 하단 바 가운데 ↩ (2단 이상) */
+.tb.center > .back-x { background-color: #3f9488; border-color: #1f4b48; }
+
+/* 로비 무대 HUD: 단계 진행 + 도전 */
+.stage-hud { flex-direction: row; align-items: center; height: 52px; padding: 0 8px 0 76px; background-color: rgba(11, 26, 27, 0.5); }
+.sh-prog { flex-grow: 1; margin-right: 8px; }
+.sh-stage { font-size: 14px; -unity-font-style: bold; color: #fff5df; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.sh-bar { height: 8px; margin-top: 4px; border-radius: 4px; }
+.challenge { height: 40px; padding: 0 16px; border-radius: 10px; background-color: #f0832b; border-color: #b1521a; }
+.ch-t { font-size: 15px; }
+.side-col { top: 128px; left: 8px; }
+
+/* 로비 무대: 3인 자동 대전 */
+.lstage { flex-grow: 1; justify-content: space-around; padding: 8px 0 20px 0; }
+.lstage-empty { -unity-text-align: middle-center; font-size: 15px; color: #fff5df; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+.ls-row { flex-direction: row; justify-content: center; }
+.ls-u { width: 84px; margin: 0 6px; align-items: center; }
+.ls-u.dead { opacity: 0.3; }
+.ls-face { width: 72px; height: 72px; }
+.ls-u.leader .ls-face { width: 84px; height: 84px; }
+.ls-u > .bar { width: 72px; margin-top: 4px; height: 6px; }
+.ls-row.foe .fill { background-color: #ff6a4a; }
+
+/* 데미지·회복 숫자 (로비 무대·전투) */
+.dmg { position: absolute; top: 4px; font-size: 22px; -unity-font-style: bold; color: #ffe066; text-shadow: 0 2px 3px rgba(60, 10, 10, 0.95); white-space: nowrap; }
+.dmg.heal { color: #8cf0a8; text-shadow: 0 2px 3px rgba(5, 40, 20, 0.95); }
+.pop { display: none; }
+
+/* 아이템 타일: 둥근 면 + 위 광택 + 그림(살짝 넘침) + 오른쪽 아래 개수 + 왼쪽 위 표시 */
+.tile-i { border-radius: 12px; background-color: #1f4a48; border-width: 0 0 3px 0; border-color: #0b1f20; align-items: center; justify-content: center; }
+.tile-gloss { position: absolute; left: 3px; right: 3px; top: 3px; height: 40%; border-radius: 10px; background-color: rgba(255, 255, 255, 0.07); }
+.tile-pic { margin-top: -6px; }
+.tile-count { position: absolute; right: 5px; bottom: 2px; font-size: 13px; -unity-font-style: bold; color: #ffffff; text-shadow: 0 1px 2px rgba(0, 0, 0, 1); }
+.tile-badge { position: absolute; left: 4px; top: 3px; padding: 0 4px; border-radius: 5px; background-color: rgba(11, 26, 27, 0.8); font-size: 10px; -unity-font-style: bold; color: #f3c55b; }
+.gear-grid { justify-content: center; }
+.gear-grid > .tile-i { margin: 4px; }
+.rw > .tile-i { margin-bottom: 4px; }
+
+/* 비용 버튼: 위 동사 + 아래 (아이콘 비용) */
+.costbtn { min-height: 56px; padding: 0 16px; align-items: center; justify-content: center; }
+.cb-verb { font-size: 16px; -unity-font-style: bold; color: #fff5df; -unity-text-align: middle-center; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.cb-cost { margin-top: 2px; padding: 0 8px 0 4px; border-radius: 9px; background-color: rgba(0, 0, 0, 0.25); }
+.cb-n { margin-left: 3px; font-size: 12px; -unity-font-style: bold; color: #fff5df; }
+.urow > .costbtn { min-height: 48px; }
+
+/* 토스트: 화면 가운데 높이, 가로 전체 검은 반투명 띠 */
+.toast { position: absolute; left: 0; right: 0; top: 46%; height: 44px; align-items: center; justify-content: center; background-color: rgba(5, 12, 12, 0.78); }
+.toast-t { font-size: 14px; color: #fff5df; -unity-text-align: middle-center; }
+
+/* 공통 팝업: 대표 아이콘은 위 테두리에, 버튼 줄은 아래 테두리에 걸침 */
+.popup .pop-box { width: 320px; border-radius: 18px; background-color: #17393a; }
+.pop-head { height: 48px; align-items: center; justify-content: center; border-top-left-radius: 18px; border-top-right-radius: 18px; background-color: #3f9488; }
+.pop-title { font-size: 17px; -unity-font-style: bold; color: #fff5df; -unity-text-align: middle-center; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.pop-body { padding: 20px 16px 36px 16px; }
+.pop-text { font-size: 15px; color: #fff5df; -unity-text-align: middle-center; }
+.pop-btns { position: absolute; left: 16px; right: 16px; bottom: -24px; justify-content: center; }
+.pop-btns > .btn { flex-grow: 1; flex-basis: 0; margin: 0 4px; }
+.pop-hero { position: absolute; left: 124px; top: -40px; }
+.pop-amount { justify-content: center; margin-top: 18px; margin-bottom: 8px; }
+.pop-have { font-size: 22px; -unity-font-style: bold; color: #ff6a4a; }
+.pop-need { font-size: 22px; -unity-font-style: bold; color: #fff5df; }
+.pop-src { margin-top: 8px; padding: 8px 8px 8px 12px; border-radius: 10px; background-color: #0b1f20; }
+
+/* 보상 획득 연출 */
+.modal.reward { background-color: rgba(4, 10, 10, 0.82); justify-content: center; }
+.rays { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+.reward-title { font-size: 30px; -unity-font-style: bold; color: #f3c55b; letter-spacing: 2px; -unity-text-align: middle-center; text-shadow: 0 3px 6px rgba(0, 0, 0, 0.9); margin-bottom: 20px; }
+.reward-grid { flex-direction: row; flex-wrap: wrap; justify-content: center; width: 300px; }
+.reward-grid > .tile-i { margin: 6px; }
+.pop-in { transition-property: opacity, scale; transition-duration: 0.25s; transition-timing-function: ease-out-back; }
+.reward-hint { margin-top: 28px; font-size: 12px; color: #9dbdb6; -unity-text-align: middle-center; }
+
+/* VS 컷인 */
+.vs-cut { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(4, 10, 10, 0); transition-property: background-color, opacity; transition-duration: 0.25s; }
+.vs-cut.in { background-color: rgba(4, 10, 10, 0.75); }
+.vs-cut.out { opacity: 0; }
+.vs-l, .vs-r { position: absolute; top: 26%; width: 190px; height: 250px; border-radius: 14px; border-width: 3px; border-color: #f3c55b; transition-property: translate; transition-duration: 0.35s; transition-timing-function: ease-out-cubic; }
+.vs-l { left: 0; translate: -240px 0; rotate: -6deg; }
+.vs-r { right: 0; top: 40%; translate: 240px 0; rotate: 6deg; border-color: #ff6a4a; }
+.vs-cut.in .vs-l, .vs-cut.in .vs-r { translate: 0 0; }
+.vs-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 0; background-color: rgba(11, 26, 27, 0.85); font-size: 16px; -unity-font-style: bold; color: #fff5df; -unity-text-align: middle-center; }
+.vs-mark { position: absolute; left: 0; right: 0; top: 38%; font-size: 96px; -unity-font-style: bold; color: #f0832b; -unity-text-align: middle-center; text-shadow: 0 4px 8px rgba(0, 0, 0, 0.9); opacity: 0; scale: 2 2; transition-property: opacity, scale; transition-duration: 0.2s; }
+.vs-mark.in { opacity: 1; scale: 1 1; }
+
+/* 승패 도장 */
+.stamp { font-size: 84px; rotate: -8deg; margin-top: 6px; text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8); }
+.stamp.win { color: #f3c55b; }
+.verdict-sub { font-size: 16px; -unity-font-style: bold; color: #fff5df; -unity-text-align: middle-center; margin-top: 4px; }
+
+/* 덱 편성: 고른 칸 표시 + 아래 보유 무인 격자 */
+.dslot.sel .dpic { border-width: 3px; border-color: #f0832b; border-radius: 12px; }
+.own-grid { padding: 4px 8px 8px 8px; margin: 0 8px; border-radius: 12px; background-color: #0b1f20; }
+.own-face { height: 62px; }
+.cell5 > .dn { font-size: 10px; }

@@ -13,6 +13,30 @@ namespace MartialTactics.App
 
         public static Texture2D Portrait(string unitId) => string.IsNullOrEmpty(unitId) ? null : Load("Portraits/" + unitId);
 
+        static Texture2D pattern;
+
+        /// <summary>바탕 무늬: 옅은 붓 사선 두 줄과 점. 코드로 만들어 그림 파일이 필요 없다.</summary>
+        public static Texture2D Pattern()
+        {
+            if (pattern != null) return pattern;
+            const int n = 48;
+            pattern = new Texture2D(n, n, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Repeat, hideFlags = HideFlags.HideAndDontSave };
+            var px = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    int d = (x + y) % n;
+                    byte a = 0;
+                    if (d < 2) a = 14;                      // 사선
+                    else if (d == 24 || d == 25) a = 8;     // 가는 사선
+                    if ((x - 36) * (x - 36) + (y - 12) * (y - 12) <= 2) a = 18; // 점
+                    px[y * n + x] = new Color32(160, 220, 205, a);
+                }
+            pattern.SetPixels32(px);
+            pattern.Apply();
+            return pattern;
+        }
+
         public static Texture2D Load(string path)
         {
             if (!cache.TryGetValue(path, out var tex))

@@ -40,13 +40,33 @@ namespace MartialTactics.App
             Hide();
         }
 
+        /// <summary>지금 화면 위에 겹치는 팝업·토스트를 붙일 곳. 화면을 다시 그리면 함께 사라진다.</summary>
+        public static UiRoot Current { get; private set; }
+
         public void Show(VisualElement screen)
         {
+            Current = this;
             root.Clear();
+            // 바탕 층: 가장 어두운 비취 위에 옅은 사선 무늬 (패널·우물은 그 위에 면으로)
+            screen.style.backgroundImage = new StyleBackground(Art.Pattern());
+            screen.style.backgroundRepeat = new BackgroundRepeat(Repeat.Repeat, Repeat.Repeat);
+            screen.style.backgroundSize = new BackgroundSize(new Length(48), new Length(48));
             root.Add(screen);
             Skin.Apply(screen);
             root.style.display = DisplayStyle.Flex;
             Visible = true;
+        }
+
+        public void Overlay(VisualElement e) => root.Add(e);
+
+        /// <summary>화면 가운데 높이에 가로 전체 검은 반투명 띠 한 줄, 1.5초.</summary>
+        public void Toast(string text)
+        {
+            var band = new VisualElement { pickingMode = PickingMode.Ignore };
+            band.AddToClassList("toast");
+            band.Add(Ui.Lb(text, "toast-t"));
+            root.Add(band);
+            band.schedule.Execute(() => band.RemoveFromHierarchy()).StartingIn(1500);
         }
 
         public void Hide()

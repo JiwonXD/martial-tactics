@@ -69,13 +69,11 @@ namespace MartialTactics.App
         {
             var dim = LobbyScreen.Sheet(app, "자동 뽑기 결과", out var body);
             dim.AddToClassList("bottom");
+            // 아이템 타일: 그 칸 그림 + 오른쪽 아래 강화 수치, 왼쪽 위 Lv. 장비 데이터가 없어 칸 종류만 돌려 보인다
             var grid = Ui.El("gear-grid");
+            string[] art = { "weapon", "robe", "boots", "jade" };
             for (int i = 0; i < 12; i++)
-            {
-                var slot = Ui.El("gear-cell", "empty");
-                slot.Add(Ui.Lb(Ui.GearSlots[i % 4], "lb"));
-                grid.Add(slot);
-            }
+                grid.Add(Ui.Tile(art[i % 4], Icon.Kind.Forge, $"+{Ui.N}", -1, $"Lv {Ui.N}", 70));
             body.Add(grid);
             var foot = Ui.El("sheet-foot");
             var pick = new Button();
@@ -126,11 +124,9 @@ namespace MartialTactics.App
             screen.Add(sv);
 
             var footer = Ui.El("footer", "static");
-            var grow = new Button();
-            grow.AddToClassList("btn");
-            grow.AddToClassList("pri");
-            grow.AddToClassList("iconbtn");
-            grow.Add(Ui.Lb("대장간 성장", "bt"), Ui.Item(Icon.Kind.Flame, 22), Ui.Lb(Ui.N, "bt"));
+            // 불씨가 모자라면 부족 팝업: 불씨는 장비 분해로 얻는다
+            var grow = Ui.CostBtn("대장간 성장", Icon.Kind.Flame, Ui.N, true,
+                () => Popup.Lack("불씨", Icon.Kind.Flame, Ui.N, Ui.N, new (string, Action)[] { ("장비 분해", app.OpenForgeResult) }));
             footer.Add(grow);
             screen.Add(footer);
             return screen;
@@ -163,7 +159,7 @@ namespace MartialTactics.App
             {
                 var row = Ui.El("skrow", "plate-row", "off");
                 var line = Ui.El("row");
-                line.Add(Ui.Add(Ui.El("gear-cell", "mini"), Ui.Lb(Ui.GearSlots[slot], "lb")));
+                line.Add(Ui.Tile(new[] { "weapon", "robe", "boots", "jade" }[slot], Icon.Kind.Forge, $"+{Ui.N}", -1, null, 52));
                 var t = Ui.El("grow");
                 t.Add(Ui.Lb($"[장비] · {Ui.N}", "b"), Ui.Lb($"{Ui.GearStats[slot]} +{Ui.N}", "desc"));
                 line.Add(t, Ui.Lb($"+{Ui.N}", "delta"));

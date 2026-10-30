@@ -37,11 +37,7 @@ namespace MartialTactics.App
             var t = Ui.El("grow");
             t.Add(Ui.Lb(Ui.Stars(u.Id, u.Promotions), "sr", "left"), Ui.Lb(Catalog.Unit[u.Id].Name, "b"), Ui.Lb($"Lv {Ui.N}", "lb"));
             row.Add(t);
-            var b = new Button();
-            b.AddToClassList("btn");
-            b.AddToClassList("iconbtn");
-            b.Add(Ui.Lb("레벨업", "bt"), Ui.Item(Icon.Kind.Book, 20), Ui.Lb(Ui.N, "bt"));
-            row.Add(b);
+            row.Add(Ui.CostBtn("레벨업", Icon.Kind.Book, Ui.N, false, null));
             string id = u.Id;
             face.RegisterCallback<ClickEvent>(_ => app.OpenUnit(id));
             return row;
@@ -153,14 +149,8 @@ namespace MartialTactics.App
             tr.Add(Ui.Item(Icon.Kind.Clock, 18), Ui.Lb($"{Ui.N}:{Ui.N}:{Ui.N}", "dp-time-n"));
             time.Add(tr);
             bottom.Add(time);
-            var start = new Button();
-            start.AddToClassList("btn");
-            start.AddToClassList("pri");
+            var start = Ui.CostBtn("수련 시작", Icon.Kind.Pill, Ui.N, true, null, special ? "pill2" : "pill");
             start.AddToClassList("dp-start");
-            start.Add(Ui.Lb("수련 시작", "draw-name"));
-            var cost = Ui.El("row", "draw-cost");
-            cost.Add(Ui.Item(Icon.Kind.Pill, 18, special ? "pill2" : "pill"), Ui.Lb(Ui.N, "dc-t"));
-            start.Add(cost);
             bottom.Add(start);
             panel.Add(bottom);
             return panel;

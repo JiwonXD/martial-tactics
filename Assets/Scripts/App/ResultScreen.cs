@@ -18,9 +18,14 @@ namespace MartialTactics.App
             head.style.paddingBottom = 16;
             head.style.alignItems = Align.Center;
             string verdict = r.Winner == Side.A ? "승리" : r.Winner == Side.B ? "패배" : "무승부";
-            var v = Ui.Lb(verdict, "verdict");
-            if (r.Winner == Side.A) v.AddToClassList("win");
-            head.Add(v, Ui.Lb(Reason(r), "lb"));
+            // 승패 연출: 기울어진 큰 붓 글씨 도장, 이기면 뒤에 빛줄기
+            var v = Ui.Lb(r.Winner == Side.A ? "勝" : r.Winner == Side.B ? "敗" : "和", "verdict", "stamp");
+            if (r.Winner == Side.A)
+            {
+                v.AddToClassList("win");
+                head.Add(new Popup.Rays());
+            }
+            head.Add(v, Ui.Lb(verdict, "verdict-sub"), Ui.Lb(Reason(r), "lb"));
             screen.Add(head);
 
             var summary = new ScrollView(ScrollViewMode.Vertical);
