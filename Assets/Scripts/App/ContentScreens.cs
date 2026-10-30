@@ -180,6 +180,23 @@ namespace MartialTactics.App
             foot.Add(Ui.Btn("확인", () => { app.LastDraw.Clear(); app.Refresh(); }, "btn", "pri", "wide"));
             sheet.Add(foot);
             dim.Add(sheet);
+
+            // 뽑기 연출: 산문 그림이 가운데에서 좌우로 열리고, 그 뒤로 결과가 떠오른다
+            sheet.AddToClassList("reveal");
+            var gate = Ui.El("gate");
+            gate.pickingMode = PickingMode.Ignore;
+            var art = Art.Load("Art/gacha_hero");
+            foreach (var side in new[] { "gate-l", "gate-r" })
+            {
+                var half = Ui.El("gate-half", side);
+                if (art != null) half.style.backgroundImage = new StyleBackground(art);
+                gate.Add(half);
+            }
+            gate.Add(Ui.El("gate-light"));
+            dim.Add(gate);
+            gate.schedule.Execute(() => gate.AddToClassList("open")).StartingIn(250);
+            sheet.schedule.Execute(() => sheet.AddToClassList("in")).StartingIn(650);
+            gate.schedule.Execute(() => gate.RemoveFromHierarchy()).StartingIn(1200);
             return dim;
         }
 

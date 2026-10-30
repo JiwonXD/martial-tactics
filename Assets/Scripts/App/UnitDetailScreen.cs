@@ -19,14 +19,22 @@ namespace MartialTactics.App
             scroll.style.flexGrow = 1;
             screen.Add(scroll);
 
-            // 일러스트와 겹쳐 놓인 이름 카드. 뒤로 버튼은 일러스트 위에 띄운다
-            var head = Ui.El();
+            // 머리 (삼국지 전략판 무장 화면 참고): 큰 초상(아래로 어두워짐), 왼쪽 세력 세로 깃발, 초상 둘레에 Lv · 승급 배지,
+            // 아래에 이름 · 별 · 전투력. 뒤로 가기는 하단 바 가운데 ↩
+            var head = Ui.El("dh");
             head.Add(Ui.Portrait(u.Id, false, "illust"));
-            var card = Ui.El("namecard", "plate-row");
-            card.Add(Ui.Lb($"{Ui.Stars(u.Id, u.Promotions)}  <color=#5c564d>{GameState.Rank(stars)} · 승급 {u.Promotions}/{stars}</color>", "stars"));
-            card.Add(Ui.El("row").Add(Ui.Lb(d.Name, "uname"), Ui.Lb("Lv [n]", "lvtag")));
-            card.Add(Ui.Lb($"{d.Title} · {d.Faction}", "lb"));
+            head.Add(Ui.El("illust-shade"));
+            var flag = Ui.El("sect-flag");
+            foreach (char ch in d.Faction) flag.Add(Ui.Lb(ch.ToString(), "sf-ch"));
+            head.Add(flag);
+            head.Add(Ui.Lb($"Lv {Ui.N}", "dh-lv"));
+            head.Add(Ui.Lb($"승급 {u.Promotions}/{stars}", "dh-promo"));
+            var card = Ui.El("dh-name");
+            card.Add(Ui.Lb(Ui.Stars(u.Id, u.Promotions), "stars"), Ui.Lb(d.Name, "uname"), Ui.Lb($"{d.Title} · {GameState.Rank(stars)}", "lb"));
             head.Add(card);
+            var pow = Ui.El("dh-pow");
+            pow.Add(Ui.Lb("전투력", "lb"), Ui.Lb(Ui.N, "dh-pow-n"));
+            head.Add(pow);
             scroll.Add(head);
             screen.Add(Ui.IconBtn(Icon.Kind.Back, back, 22, "back", "float"));
 
@@ -53,29 +61,14 @@ namespace MartialTactics.App
             }
             body.Add(apt);
 
-            body.Add(Ui.Lb("무공 3칸", "lb", "section"));
-            var own = Ui.El("slot", "locked");
-            own.Add(Ui.Lb(Catalog.Skill[d.Skill].Name, "b"), SkillTag(Catalog.Skill[d.Skill]), Ui.El("grow"), Ui.Lb("자기 무공", "lb"));
-            body.Add(own);
+            // 무공 3칸: 칸마다 둥근 표식(종류 첫 글자) + 이름 한 줄. 빈 칸은 + 장착 가능
+            body.Add(Ui.Lb("무공", "lb", "section"));
+            body.Add(SkillLine(Catalog.Skill[d.Skill], true, null));
             for (int i = 0; i < 2; i++)
             {
                 int slot = i;
                 var s = game.FindSkill(u.Equipped[i]);
-                var row = Ui.El("slot");
-                row.Add(Ui.Lb($"{i + 2}", "lb"));
-                row[0].style.width = 16;
-                if (s != null)
-                {
-                    var def = Catalog.Skill[s.Skill];
-                    row.Add(Ui.Lb(def.Name, "b"), SkillTag(def), Ui.El("grow"), Ui.Lb("바꾸기 ›", "lb"));
-                }
-                else
-                {
-                    row.AddToClassList("empty");
-                    row.Add(Ui.Lb("비어 있음", "lb"), Ui.El("grow"), Ui.Lb("장착 ›", "b"));
-                }
-                row.RegisterCallback<ClickEvent>(_ => pickSkill(slot));
-                body.Add(row);
+                body.Add(SkillLine(s != null ? Catalog.Skill[s.Skill] : null, false, () => pickSkill(slot)));
             }
 
             // 장비 4칸 (2026-10-29): 칸마다 주 스탯 하나. 장비 데이터가 아직 없어 빈 칸, 누르면 장비 바꾸기
@@ -107,6 +100,28 @@ namespace MartialTactics.App
                 gear.Add(c);
             }
             return gear;
+        }
+
+        static VisualElement SkillLine(SkillDef def, bool own, Action tap)
+        {
+            var row = Ui.El("sk-line");
+            if (own) row.AddToClassList("own");
+            if (def == null)
+            {
+                row.AddToClassList("empty");
+                var plus = Ui.El("sk-dot", "plus");
+                plus.Add(new Icon(Icon.Kind.Plus, 16));
+                row.Add(plus, Ui.Lb("장착 가능", "sk-empty"));
+            }
+            else
+            {
+                var dot = Ui.El("sk-dot");
+                dot.Add(Ui.Lb(BattleRules.TypeNames[def.Type].Substring(0, 1), "sk-dot-t"));
+                row.Add(dot, Ui.Lb(def.Name, "sk-name"), SkillTag(def), Ui.El("grow"));
+                if (own) row.Add(Ui.Lb("자기 무공", "lb"));
+            }
+            if (tap != null) row.RegisterCallback<ClickEvent>(_ => tap());
+            return row;
         }
 
         static VisualElement Stat(string name, int value, int added, bool first)

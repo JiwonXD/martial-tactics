@@ -808,3 +808,90 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .own-grid { padding: 4px 8px 8px 8px; margin: 0 8px; border-radius: 12px; background-color: #0b1f20; }
 .own-face { height: 62px; }
 .cell5 > .dn { font-size: 10px; }
+
+/* ================= 2026-10-30 리뷰 2차 (삼국지 전략판 쪽) ================= */
+/* 대전 준비: 위 패널에 양 팀 전투력 한 번, 칸 위 역할 띠, 세로 카드, 빈 칸 실루엣 */
+.ready-sum { height: 72px; flex-shrink: 0; padding: 0 12px; background-color: #17393a; justify-content: center; }
+.rs-side { flex-grow: 1; flex-basis: 0; align-items: center; }
+.rs-side > .row > .elem { margin-left: 6px; }
+.rs-who { font-size: 13px; color: #9dbdb6; }
+.rs-pow { margin-top: 2px; font-size: 20px; -unity-font-style: bold; color: #f3c55b; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.rs-side.foe .rs-pow { color: #ff8a6a; }
+.rs-colon { font-size: 22px; -unity-font-style: bold; color: #6f948d; margin: 0 8px; }
+.ready-field { padding: 12px 12px 12px 12px; justify-content: space-around; }
+.rteam { padding: 8px 4px 8px 4px; }
+.role-band { margin-bottom: 4px; padding: 2px 0; border-radius: 6px; background-color: #0b1f20; font-size: 12px; -unity-font-style: bold; color: #9dbdb6; -unity-text-align: middle-center; }
+.rcol.leader .role-band { background-color: #f3c55b; color: #0b1a1b; }
+.rpic { height: 150px; }
+.silhouette { border-radius: 10px; background-color: #0b1f20; align-items: center; justify-content: center; opacity: 0.6; }
+
+/* 전투 위 띠: 양 팀 초상 3장 + 체력, 가운데 합 메달 */
+.hud { height: 76px; }
+.minis { margin-bottom: 4px; }
+.minis.foe { justify-content: flex-end; }
+.mini { width: 30px; height: 30px; margin-right: 4px; border-radius: 8px; }
+.round-medal { width: 58px; height: 58px; border-radius: 29px; border-width: 3px; border-color: #f3c55b; background-color: #0b1f20; align-items: center; justify-content: center; }
+.round { font-size: 15px; }
+
+/* 무대 가운데 잠깐 뜨는 연출: 큰 "N합", 주장 무공 컷인 */
+.flash { position: absolute; opacity: 0; transition-property: opacity, scale, translate; transition-duration: 0.18s; }
+.flash.in { opacity: 1; }
+.round-call { left: 0; right: 0; top: 40%; font-size: 64px; -unity-font-style: bold; color: #fff5df; -unity-text-align: middle-center; text-shadow: 0 4px 8px rgba(0, 0, 0, 0.9); scale: 1.6 1.6; }
+.round-call.in { scale: 1 1; }
+.skill-cut { left: 0; right: 0; top: 34%; height: 110px; flex-direction: row; align-items: center; padding: 0 20px; background-color: rgba(11, 26, 27, 0.88); border-top-width: 3px; border-bottom-width: 3px; border-color: #f3c55b; translate: -60px 0; }
+.skill-cut.foe { border-color: #ff6a4a; }
+.skill-cut.in { translate: 0 0; }
+.sc-face { width: 92px; height: 92px; border-radius: 46px; border-width: 3px; border-color: #f3c55b; }
+.sc-name { margin-left: 16px; font-size: 34px; -unity-font-style: bold; color: #f3c55b; rotate: -4deg; text-shadow: 0 3px 6px rgba(0, 0, 0, 0.9); }
+.skill-cut.foe .sc-name { color: #ff8a6a; }
+
+/* 결과: 전보식 팀 카드 */
+.rep-team { margin-bottom: 12px; padding: 10px 8px; border-radius: 14px; background-color: #17393a; }
+.rep-team.foe { background-color: #2a2a2e; }
+.rep-title { margin: 0 4px 8px 4px; font-size: 14px; -unity-font-style: bold; color: #fff5df; }
+.rep-row { align-items: flex-start; }
+.rep-card { flex-grow: 1; flex-basis: 0; margin: 0 4px; padding: 6px; border-radius: 10px; background-color: #0b1f20; }
+.rep-card.dead { opacity: 0.55; }
+.rep-face { height: 78px; }
+.rep-card > .un { margin: 4px 0; }
+.rep-stats { margin-top: 6px; }
+.rep-stat > .lb { font-size: 11px; }
+.rep-v { font-size: 12px; -unity-font-style: bold; color: #fff5df; }
+.rep-exp { margin-top: 4px; font-size: 11px; -unity-font-style: bold; color: #7fe0a0; -unity-text-align: middle-center; }
+
+/* 무인 상세 머리: 큰 초상 + 아래로 어두워짐, 왼쪽 세력 세로 깃발, 둘레 배지, 이름 · 전투력 */
+.dh { height: 400px; }
+.dh > .illust { position: absolute; left: 0; right: 0; top: 0; bottom: 0; height: auto; }
+.illust-shade { position: absolute; left: 0; right: 0; bottom: 0; height: 150px; background-color: rgba(14, 37, 38, 0.72); }
+.sect-flag { position: absolute; left: 12px; top: 12px; width: 34px; padding: 8px 0 12px 0; border-bottom-left-radius: 4px; border-bottom-right-radius: 17px; background-color: #b33a2c; align-items: center; }
+.sf-ch { font-size: 17px; -unity-font-style: bold; color: #fff5df; -unity-text-align: middle-center; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.dh-lv { position: absolute; right: 12px; top: 12px; padding: 2px 10px; border-radius: 12px; background-color: rgba(11, 26, 27, 0.85); font-size: 14px; -unity-font-style: bold; color: #fff5df; }
+.dh-promo { position: absolute; right: 12px; top: 44px; padding: 2px 10px; border-radius: 12px; background-color: rgba(179, 58, 44, 0.9); font-size: 12px; -unity-font-style: bold; color: #fff5df; }
+.dh-name { position: absolute; left: 14px; bottom: 14px; }
+.dh-name > .uname { font-size: 28px; }
+.dh-pow { position: absolute; right: 14px; bottom: 16px; align-items: flex-end; }
+.dh-pow-n { font-size: 26px; -unity-font-style: bold; color: #f3c55b; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); }
+.detail-body { padding-top: 12px; }
+.namecard { display: none; }
+
+/* 무공 칸 한 줄: 둥근 표식 + 이름 */
+.sk-line { flex-direction: row; align-items: center; min-height: 52px; margin-top: 6px; padding: 0 12px 0 8px; border-radius: 12px; background-color: #17393a; }
+.sk-line.own { background-color: #1f4a48; }
+.sk-line.empty { background-color: #0b1f20; }
+.sk-dot { width: 36px; height: 36px; margin-right: 10px; border-radius: 18px; border-width: 2px; border-color: #f3c55b; background-color: #0b1f20; align-items: center; justify-content: center; color: #6cc2b3; }
+.sk-dot.plus { border-color: #3f9488; }
+.sk-dot-t { font-size: 15px; -unity-font-style: bold; color: #f3c55b; }
+.sk-name { font-size: 15px; -unity-font-style: bold; color: #fff5df; }
+.sk-empty { font-size: 14px; color: #6cc2b3; }
+
+/* 뽑기 연출: 산문이 좌우로 열림 */
+.gate { position: absolute; left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.gate-half { position: absolute; top: 0; bottom: 0; width: 50%; -unity-background-scale-mode: scale-and-crop; transition-property: translate; transition-duration: 0.6s; transition-timing-function: ease-in-cubic; }
+.gate-l { left: 0; background-position-x: right; }
+.gate-r { right: 0; background-position-x: left; }
+.gate.open .gate-l { translate: -100% 0; }
+.gate.open .gate-r { translate: 100% 0; }
+.gate-light { position: absolute; left: 49%; top: 0; bottom: 0; width: 2%; background-color: rgba(255, 236, 170, 0.9); transition-property: scale, opacity; transition-duration: 0.6s; }
+.gate.open .gate-light { scale: 30 1; opacity: 0; }
+.sheet.reveal { opacity: 0; scale: 0.9 0.9; transition-property: opacity, scale; transition-duration: 0.3s; }
+.sheet.reveal.in { opacity: 1; scale: 1 1; }

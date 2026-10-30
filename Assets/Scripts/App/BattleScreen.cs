@@ -29,7 +29,7 @@ namespace MartialTactics.App
         bool done;
 
         // 화면 요소
-        readonly VisualElement allyBar, foeBar, logPanel, banner;
+        readonly VisualElement allyBar, foeBar, logPanel, banner, arena;
         readonly ScrollView logBody;
         readonly Label allyPct, foePct, round, logRound, bannerSide, bannerText;
         readonly Button speedBtn, fullToggle;
@@ -57,23 +57,23 @@ namespace MartialTactics.App
             allyBar = Ui.Bar(1, false);
             allyBar.style.flexGrow = 1;
             allyBar.style.marginRight = 6;
-            left.Add(Ui.Lb("아군 체력", "lb"), Ui.El("row").Add(allyBar, allyPct));
+            left.Add(Minis(Side.A), Ui.El("row").Add(allyBar, allyPct));
             var mid = Ui.El("hud-mid");
             round = Ui.Lb("", "round");
-            mid.Add(round, Ui.Lb("합", "lb"));
+            var medal = Ui.El("round-medal");
+            medal.Add(round);
+            mid.Add(medal);
             var right = Ui.El("hud-side");
             foePct = Ui.Lb("", "b");
             foeBar = Ui.Bar(1, true);
             foeBar.style.flexGrow = 1;
             foeBar.style.marginLeft = 6;
-            var foeLabel = Ui.Lb("상대 체력", "lb");
-            foeLabel.style.unityTextAlign = UnityEngine.TextAnchor.MiddleRight;
-            right.Add(foeLabel, Ui.El("row").Add(foePct, foeBar));
+            right.Add(Minis(Side.B), Ui.El("row").Add(foePct, foeBar));
             hud.Add(left, mid, right);
             Root.Add(hud);
 
             // 연출: 위 상대, 가운데 발동 배너, 아래 아군. 주장이 가운데에 크게
-            var arena = Ui.El("arena");
+            arena = Ui.El("arena");
             var bg = Art.Load("Art/lobby_bg");
             if (bg != null) arena.style.backgroundImage = new StyleBackground(bg);
             units = new UnitView[result.Units.Count];
@@ -114,6 +114,33 @@ namespace MartialTactics.App
         }
 
         readonly Floaters floaters = new Floaters();
+
+        // 위 띠의 팀 초상 3장 (왼쪽부터 주장 · 부장 · 부장)
+        VisualElement Minis(Side side)
+        {
+            var row = Ui.El("row", "minis");
+            if (side == Side.B) row.AddToClassList("foe");
+            foreach (int pos in new[] { 0, 1, 2 })
+            {
+                var u = result.Units.Find(x => x.Side == side && x.Pos == pos);
+                if (u == null) continue;
+                var f = Ui.Portrait(u.Source.Id, true, "mini");
+                f.Add(Skin.CardFrame(pos == 0));
+                row.Add(f);
+            }
+            return row;
+        }
+
+        // 연출 하나를 무대 가운데에 잠깐 띄웠다 걷는다
+        void Flash(VisualElement e, int ms)
+        {
+            e.pickingMode = PickingMode.Ignore;
+            e.AddToClassList("flash");
+            arena.Add(e);
+            e.schedule.Execute(() => e.AddToClassList("in")).StartingIn(20);
+            e.schedule.Execute(() => e.RemoveFromClassList("in")).StartingIn(ms - 200);
+            e.schedule.Execute(() => e.RemoveFromHierarchy()).StartingIn(ms);
+        }
 
         // 대전 시작 VS 컷인: 양 주장이 사선으로 들어오고 가운데 붓 획 "對"가 찍힌 뒤 걷힌다
         VisualElement VsCut()
@@ -208,14 +235,27 @@ namespace MartialTactics.App
             round.text = line.Round == 0 ? "준비" : $"{line.Round} / {maxRounds}";
             logRound.text = line.Round == 0 ? "준비 합" : $"{line.Round}합";
 
-            // 발동·연계 무공이 나오면 배너. 새 합이 시작되면 내린다
-            if (Header(line)) banner.style.visibility = Visibility.Hidden;
+            // 발동·연계 무공이 나오면 배너. 새 합이 시작되면 내리고 가운데에 큰 "N합"
+            if (Header(line))
+            {
+                banner.style.visibility = Visibility.Hidden;
+                if (line.Round > 0) Flash(Ui.Lb($"{line.Round}합", "round-call"), 800);
+            }
             var cast = ParseCast(line.Text);
             if (cast != null)
             {
                 bannerSide.text = cast.Value.side;
                 bannerText.text = cast.Value.text;
                 banner.style.visibility = Visibility.Visible;
+                // 주장의 무공은 초상 + 붓 글씨 무공 이름 컷인
+                var who = cast.Value.text.Split('·')[0].Trim();
+                var leader = result.Units.Find(u => u.Pos == 0 && u.Name == who);
+                if (leader != null)
+                {
+                    var cut = Ui.El("skill-cut", leader.Side == Side.A ? "ally" : "foe");
+                    cut.Add(Ui.Portrait(leader.Source.Id, true, "sc-face"), Ui.Lb(cast.Value.text.Split('·')[1].Trim(), "sc-name"));
+                    Flash(cut, 900);
+                }
             }
 
             RenderLog();
