@@ -195,7 +195,7 @@ namespace MartialTactics.App
                 b.AddToClassList("tb");
                 bool on = app.Tab == tab;
                 var medal = Ui.El("medal");
-                medal.Add(Ui.Item(t.icon, 50));
+                medal.Add(Ui.Item(t.icon, 48));
                 b.Add(medal);
                 var name = Ui.Lb(t.name, "tbn");
                 if (on) b.AddToClassList("on");

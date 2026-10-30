@@ -901,3 +901,14 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .ln.ally { color: #8fd8c8; }
 .ln.foe { color: #ffab94; }
 .ln.hl { color: #f3c55b; }
+
+/* 하단 바 간격 (2026-10-30 박지원): 칸 가운데가 아니라 실제 폭 기준으로 사이 간격을 모두 같게.
+   아이콘 칸 52 · 가운데 칸 108(로비 대장간 그림 폭 = 메뉴의 닫기 · 뒤로 단추 폭), 사이는 space-evenly */
+.nav { justify-content: space-evenly; }
+.tb, .tb.on { width: 52px; flex-grow: 0; flex-shrink: 0; }
+.tb.center { width: 108px; }
+.medal, .tb.on .medal { width: 52px; height: 52px; }
+.tbn { left: -14px; right: -14px; }
+.tb.center > .x { width: 108px; height: 52px; border-radius: 14px; }
+.forge-box { width: 108px; }
+.forge-art { left: 0; right: 0; }
