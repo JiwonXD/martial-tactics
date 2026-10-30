@@ -895,3 +895,9 @@ Label { -unity-text-align: middle-left; white-space: normal; padding: 0; margin:
 .gate.open .gate-light { scale: 30 1; opacity: 0; }
 .sheet.reveal { opacity: 0; scale: 0.9 0.9; transition-property: opacity, scale; transition-duration: 0.3s; }
 .sheet.reveal.in { opacity: 1; scale: 1 1; }
+
+/* 전투 기록: 칸을 채우는 12줄, 아군 비취 · 상대 주홍 */
+.ln { margin-bottom: 3px; font-size: 12px; }
+.ln.ally { color: #8fd8c8; }
+.ln.foe { color: #ffab94; }
+.ln.hl { color: #f3c55b; }

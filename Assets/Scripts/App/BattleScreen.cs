@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using MartialTactics.Battle;
@@ -13,7 +13,7 @@ namespace MartialTactics.App
     sealed class BattleScreen
     {
         const float LineDelay = 0.45f; // ×1에서 기록 한 줄 간격(초)
-        const int LogLines = 5;
+        const int LogLines = 11; // 2026-10-30 박지원: 기록은 그대로 두고 칸을 채우게 (5줄은 칸에 비해 너무 적음)
 
         public readonly VisualElement Root;
 
@@ -269,6 +269,8 @@ namespace MartialTactics.App
             foreach (var l in lines)
             {
                 var lb = Ui.Lb(l.Text, "ln");
+                if (l.Text.StartsWith("[아]")) lb.AddToClassList("ally"); // 아군 비취 · 상대 주홍
+                else if (l.Text.StartsWith("[적]")) lb.AddToClassList("foe");
                 if (Header(l)) lb.AddToClassList("head");
                 else if (ParseCast(l.Text) != null) lb.AddToClassList("hl");
                 logBody.Add(lb);
