@@ -17,6 +17,9 @@ function mulberry32(seed) {
 // 자리에 따라 효과가 갈리는 무공: 진법(주장·같은 속성), 두전성이(주장), 호위(주장이 아닐 때)
 const LEADER_ONLY = new Set(['dujeon']), NOT_LEADER = new Set(['howi', 'hopyo']);
 const placed = s => s.type === 'formation' || LEADER_ONLY.has(s.id) || NOT_LEADER.has(s.id);
+// 뽑기로 얻을 수 있는 무인(6성 제외)과 그 무인에게서 추출할 수 있는 무공
+const POOL = S.UNITS.filter(u => stars(u.id) <= 5);
+const EXTRACTABLE = S.SKILLS.filter(s => POOL.some(u => u.skill === s.id));
 
 // 실제 편성처럼 자리를 잡는다: 진법·두전성이 주인은 주장, 호위 주인은 부장
 function arrange(units) {
@@ -35,7 +38,7 @@ function randomTeam(rand, pool) {
   while (units.length < 3) { const u = pool[Math.floor(rand() * pool.length)]; if (!units.includes(u)) units.push(u); }
   const formationElement = arrange(units);
   const used = units.map(u => u.skill);
-  const free = S.SKILLS.filter(s => !used.includes(s.id) && !placed(s)); // 자리 따라 갈리는 무공은 무작위로 안 끼움
+  const free = EXTRACTABLE.filter(s => !used.includes(s.id) && !placed(s)); // 자리 따라 갈리는 무공은 무작위로 안 끼움
   const slots = units.map(u => ({ unit: u.id, skills: [0, 1].map(() => {
     const i = Math.floor(rand() * free.length);
     return free.splice(i, 1)[0].id;
@@ -49,9 +52,10 @@ function randomTeam(rand, pool) {
   return { element: best, slots };
 }
 
-function measure(n, seed) {
+// record가 있으면 판마다 record({ a, b, winner, reason, rounds })를 부른다 (원본 기록)
+function measure(n, seed, record) {
   const rand = mulberry32(seed);
-  const pool = S.UNITS.filter(u => stars(u.id) <= 5);
+  const pool = POOL;
   const unit = {}, skill = {};
   const add = (map, k, win, extra) => {
     const r = map[k] || (map[k] = { n: 0, w: 0, ln: 0, lw: 0 });
@@ -61,6 +65,7 @@ function measure(n, seed) {
   for (let i = 0; i < n; i++) {
     const a = randomTeam(rand, pool), b = randomTeam(rand, pool);
     const r = new S.Battle(a, b, { seed: seed + i }).run();
+    if (record) record({ a, b, winner: r.winner, reason: r.reason, rounds: r.rounds });
     for (const [team, side] of [[a, 'A'], [b, 'B']]) {
       const win = r.winner === side ? 1 : r.winner ? 0 : 0.5;
       team.slots.forEach((s, pos) => {
@@ -91,4 +96,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { measure, stars };
+module.exports = { measure, stars, randomTeam, mulberry32, POOL, EXTRACTABLE };
