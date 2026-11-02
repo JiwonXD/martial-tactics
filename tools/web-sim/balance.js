@@ -91,4 +91,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { measure, stars };
+module.exports = { measure, stars, mulberry32, randomTeam, arrange, placed, LEADER_ONLY, NOT_LEADER, APT_SCORE };
