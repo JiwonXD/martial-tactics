@@ -6,7 +6,7 @@ namespace MartialTactics.App
     /// <summary>선으로 그리는 아이콘 (24×24 격자). 색은 글자색(color)을 따른다.</summary>
     sealed class Icon : VisualElement
     {
-        public enum Kind { Units, Growth, Content, Gacha, Forge, Gear, Close, Chest, Back, Plus, Coin, Ticket, Book, Ore, Flame, Pill, Clock, Check, Next, Prev }
+        public enum Kind { Units, Growth, Content, Gacha, Forge, Gear, Close, Chest, Back, Plus, Coin, Ticket, Book, Ore, Flame, Pill, Clock, Check, Next, Prev, Down, Up }
 
         readonly Kind kind;
 
@@ -163,6 +163,14 @@ namespace MartialTactics.App
                 case Kind.Next:
                     p.lineWidth = 2.2f * s;
                     Line(9, 5, 16, 12, 9, 19);
+                    break;
+                case Kind.Down:
+                    p.lineWidth = 2.2f * s;
+                    Line(5, 9, 12, 16, 19, 9);
+                    break;
+                case Kind.Up:
+                    p.lineWidth = 2.2f * s;
+                    Line(5, 15, 12, 8, 19, 15);
                     break;
                 case Kind.Prev:
                     p.lineWidth = 2.2f * s;

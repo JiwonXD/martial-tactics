@@ -36,18 +36,37 @@ namespace MartialTactics.App
             root = doc.rootVisualElement;
             root.styleSheets.Add(Resources.Load<StyleSheet>("UI/App"));
             root.AddToClassList("app-root");
-            var paper = Art.Load("Art/hanji"); // 한지 질감. 없으면 USS의 단색
-            if (paper != null) root.style.backgroundImage = new StyleBackground(paper);
             ApplyKoreanFont(root);
             Hide();
         }
 
+        /// <summary>지금 화면 위에 겹치는 팝업·토스트를 붙일 곳. 화면을 다시 그리면 함께 사라진다.</summary>
+        public static UiRoot Current { get; private set; }
+
         public void Show(VisualElement screen)
         {
+            Current = this;
             root.Clear();
+            // 바탕 층: 가장 어두운 비취 위에 옅은 사선 무늬 (패널·우물은 그 위에 면으로)
+            screen.style.backgroundImage = new StyleBackground(Art.Pattern());
+            screen.style.backgroundRepeat = new BackgroundRepeat(Repeat.Repeat, Repeat.Repeat);
+            screen.style.backgroundSize = new BackgroundSize(new Length(48), new Length(48));
             root.Add(screen);
+            Skin.Apply(screen);
             root.style.display = DisplayStyle.Flex;
             Visible = true;
+        }
+
+        public void Overlay(VisualElement e) => root.Add(e);
+
+        /// <summary>화면 가운데 높이에 가로 전체 검은 반투명 띠 한 줄, 1.5초.</summary>
+        public void Toast(string text)
+        {
+            var band = new VisualElement { pickingMode = PickingMode.Ignore };
+            band.AddToClassList("toast");
+            band.Add(Ui.Lb(text, "toast-t"));
+            root.Add(band);
+            band.schedule.Execute(() => band.RemoveFromHierarchy()).StartingIn(1500);
         }
 
         public void Hide()
@@ -68,8 +87,8 @@ namespace MartialTactics.App
 #if UNITY_2023_1_OR_NEWER
             if (koreanFont == null)
             {
-                // 화풍 A는 명조. Noto Serif KR은 가변 글꼴이라 이름으로 안 열리고 파일로 열면 가장 가는 굵기라 OS 명조를 쓴다. 없으면 고딕
-                foreach (var family in new[] { "HCR Batang", "Batang", "AppleMyungjo", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", "Noto Sans CJK KR" })
+                // 2026-10-29 크럼블 톤으로 바꾸며 고딕(Noto Sans KR)으로. 없으면 맑은 고딕
+                foreach (var family in new[] { "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR" })
                 {
                     var font = FontAsset.CreateFontAsset(family, "Regular");
                     if (font == null) continue;
