@@ -10,7 +10,7 @@ namespace MartialTactics.Battle
         public double StatK = 2;          // 피해식의 k (공격 - 방어 1당)
         public double CounterBonus = 0.15; // 오행 상극 시 주는 피해 ±15%
         public double FormationCounter = 0.10; // 진법: 상극 우위 피해 추가 +10%p
-        public double FactionBonus = 0.10; // 같은 세력 3명 시 스탯 +10%
+        public double FactionBonus = 0.05; // 같은 세력 3명 시 스탯 +5%
         public double CritMult = 1.5;
         public double HealBase = 150;     // 회복식 기본값
     }
