@@ -6,7 +6,7 @@ namespace MartialTactics.Battle
     public sealed class BattleConfig
     {
         public int Rounds = 8;
-        public double BaseDmg = 300;      // 피해식의 B
+        public double BaseDmg = 180;      // 피해식의 B
         public double StatK = 2;          // 피해식의 k (공격 - 방어 1당)
         public double CounterBonus = 0.15; // 오행 상극 시 주는 피해 ±15%
         public double FormationCounter = 0.10; // 진법: 상극 우위 피해 추가 +10%p

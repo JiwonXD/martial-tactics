@@ -304,4 +304,4 @@ if (require.main === module) {
   if (outDir) fs.writeFileSync(path.join(outDir, 'result.json'), JSON.stringify(result, (k, v) => (k === 'team' ? describe(v) : v), 1));
 }
 
-module.exports = { wilson, meanCI, population, pacing, luck, swapStudy, search, sensitivity, faction, growth };
+module.exports = { wilson, meanCI, population, pacing, luck, swapStudy, search, sensitivity, faction, growth, insertSkill, insertUnit, pairedDelta, POOL, EXTRACTABLE };
