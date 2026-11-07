@@ -1,9 +1,9 @@
-# 웹게임 배포: dev에 올라오면 web/ 화면 + 전투 엔진을 묶어 gh-pages 브랜치에 올린다 (GitHub Pages가 그 브랜치를 보여 줌)
+# 웹게임 배포: main에 올라오면 web/ 화면 + 전투 엔진을 묶어 gh-pages 브랜치에 올린다 (GitHub Pages가 그 브랜치를 보여 줌)
 name: 웹게임 배포
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
     paths: ['web/**', 'tools/web-sim/engine.js', '.github/workflows/web-game.yml']
   workflow_dispatch:
 

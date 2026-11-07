@@ -28,7 +28,7 @@ Unity Hub → Add → 이 폴더를 열면 된다. 처음 열 때 Unity가 만�
 - 화면·규칙을 Unity 쪽에서 바꾸면 `web/`도 같이 고친다. 아직 정하지 않은 수치는 Unity와 같이 `[n]`
 - 로컬 확인: `node web/build.js` → `web/dist/index.html` 열기
 - 테스트: `node web/test.js` (등급이 C# Catalog와 같은지, 뽑기·승급·추출·장착·덱·전투)
-- 배포: `dev`에 `web/`나 `engine.js` 변경이 올라오면 GitHub Actions(`.github/workflows/web-game.yml`)가 `gh-pages` 브랜치에 올리고, GitHub Pages가 그 브랜치를 보여 준다
+- 배포: `main`에 `web/`나 `engine.js` 변경이 머지되면 (main = 실제 서비스판) GitHub Actions(`.github/workflows/web-game.yml`)가 `gh-pages` 브랜치에 올리고, GitHub Pages가 그 브랜치를 보여 준다
 
 ## 게임 기본 틀 (기능 확인용)
 
