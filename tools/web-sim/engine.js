@@ -10,7 +10,7 @@
     statK: 2,            // 피해식의 k (공격 - 방어 1당)
     counterBonus: 0.15,  // 오행 상극 시 주는 피해 ±15%
     formationCounter: 0.10, // 진법: 상극 우위 피해 추가 +10%p
-    factionBonus: 0.10,  // 같은 세력 3명 시 스탯 +10%
+    factionBonus: 0.05,  // 같은 세력 3명 시 스탯 +5%
     critMult: 1.5,
     healBase: 150,       // 회복식 기본값
   };
