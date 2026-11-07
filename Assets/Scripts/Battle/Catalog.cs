@@ -204,13 +204,13 @@ namespace MartialTactics.Battle
                     if (t.Has(StatusKind.Injury)) b.AddStatus(u, t, StatusKind.Stun, 1);
                 } },
             new SkillDef { Id = "howi", Name = "호위결", Type = SkillType.Aura,
-                Desc = "1~4합 동안 아군 주장이 받는 피해의 30%를 대신 받음 (자신이 주장이면 효과 없음)",
+                Desc = "1~4합 동안 아군 주장이 받는 피해의 50%를 대신 받고, 대신 받는 피해는 50% 줄어듦 (자신이 주장이면 효과 없음)",
                 Setup = (b, u) =>
                 {
                     var leader = b.Allies(u).FirstOrDefault(a => a.Pos == 0);
                     if (leader == null || leader == u) return;
                     b.AddStatus(u, leader, StatusKind.Guard, 4);
-                    if (leader.Status.TryGetValue(StatusKind.Guard, out var g)) { g.By = u; g.Ratio = 0.3; }
+                    if (leader.Status.TryGetValue(StatusKind.Guard, out var g)) { g.By = u; g.Ratio = 0.5; g.Cut = 0.5; }
                 } },
             new SkillDef { Id = "dujeon", Name = "두전성이", Type = SkillType.Passive,
                 Desc = "자신이 주장이면, 적이 아군에게 점혈·혼란·봉인·무장해제를 걸 때 건 적에게도 똑같이 건다",
@@ -534,7 +534,7 @@ namespace MartialTactics.Battle
             U("paeng", "팽무혁", "하북도왕", "정파", 2450, 169, 71, 110, 160, "SBABC", "jikdo"),
             U("sahyeol", "사혈귀", "혈수당주", "마교", 2760, 191, 95, 115, 175, "BSACA", "talmyeong", 5),
             U("jangsam", "장삼", "금나귀수", "사파", 2700, 163, 109, 126, 165, "ABSBA", "geumna"),
-            U("cheolwi", "철위강", "호위대장", "정파", 3320, 123, 88, 184, 90, "BBSAA", "howi"),
+            U("cheolwi", "철위강", "호위대장", "정파", 3190, 118, 84, 177, 90, "BBSAA", "howi"),
             U("moyongyeon", "모용연", "두전성이 전인", "정파", 2900, 116, 188, 135, 150, "ABBSA", "dujeon"),
             U("dokgo", "독고패", "낭인검귀", "사파", 2520, 167, 89, 106, 155, "SABCB", "sajung"),
             U("baengni", "백리청", "의협", "정파", 2600, 159, 108, 117, 145, "ASBBA", "hyeolmaek"),

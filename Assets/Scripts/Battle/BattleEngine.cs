@@ -23,6 +23,7 @@ namespace MartialTactics.Battle
         public string Label;  // 지속 피해를 건 무공
         public Unit By;       // 호위하는 무인
         public double Ratio;  // 호위가 대신 받는 비율
+        public double Cut;    // 대신 받는 피해 감소 비율 (호위결)
     }
 
     public sealed class Mod
@@ -372,8 +373,9 @@ namespace MartialTactics.Battle
                 if (share > 0)
                 {
                     dmg -= share;
-                    ApplyLoss(g.By, share, src, label);
-                    Log($"{Tag(g.By)}의 호위: {Tag(dst)} 대신 {share} 피해 (남은 체력 {g.By.Hp})");
+                    int taken = g.Cut > 0 ? Math.Max(1, RoundJs(share * (1 - g.Cut))) : share;
+                    ApplyLoss(g.By, taken, src, label);
+                    Log($"{Tag(g.By)}의 호위: {Tag(dst)} 대신 {taken} 피해 (남은 체력 {g.By.Hp})");
                     if (!g.By.Dead && !counter) foreach (var h in g.By.Guarded.ToList()) h(src);
                 }
             }

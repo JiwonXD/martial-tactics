@@ -67,14 +67,14 @@ for (let seed = 1; seed <= 300; seed++) {
   });
 }
 assert(jikdo > 0 && guarded > 0 && talExtra > 0 && geumnaStun > 0, JSON.stringify({ jikdo, guarded, talExtra, geumnaStun }));
-// 호위 피해 분담: 30%를 철위강이 대신 받음
+// 호위 피해 분담: 50%를 철위강이 대신 받고, 대신 받는 피해는 절반으로 줄어듦 → 철위강 피해 ≈ 주장 피해의 절반
 { const b = new S.Battle(돌격, 호위팀, { seed: 3 });
   S.SKILL.howi.setup(b, b.units[5]);
   const [a, leader, guard] = [b.units[0], b.units[3], b.units[5]];
   const g0 = guard.hp, l0 = leader.hp;
   const dealt = b.damage(a, leader, 'int', 1, '시험');
   assert.strictEqual(l0 - leader.hp, dealt);
-  assert(g0 - guard.hp > 0 && Math.abs((g0 - guard.hp) / ((l0 - leader.hp) + (g0 - guard.hp)) - 0.3) < 0.01); }
+  assert(g0 - guard.hp > 0 && Math.abs((g0 - guard.hp) / (l0 - leader.hp) - 0.5) < 0.02); }
 
 // 3-3. 두전성이(제어 반사), 사중구활(체력 비율 비교), 혈맥상통(피해 → 체력 최저 아군 회복)
 {
