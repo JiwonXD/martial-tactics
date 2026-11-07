@@ -1,10 +1,10 @@
 // 웹게임 화면. Unity Assets/Scripts/App/ (GameApp · LobbyScreen · *Screen.cs)를 그대로 옮김.
 // 로비(하단 바: 무인 · 성장 · 대장간 · 컨텐츠 · 뽑기) → 무인 상세 → 승급·추출 / 무공 고르기, 덱 편성, 대전 → 전투 → 결과.
-// 수치가 아직 정해지지 않은 곳은 [n]. 진행 상황은 브라우저 localStorage에 저장.
+// 수치가 아직 정해지지 않은 곳은 — (Unity·기획서의 [n]). 진행 상황은 브라우저 localStorage에 저장.
 (function () {
   'use strict';
   const S = window.WuxiaSim, G = window.WuxiaGame, icon = window.WuxiaIcon;
-  const N = '[n]';
+  const N = '—'; // 아직 정하지 않은 수치 (Unity·기획서의 [n])
   const SAVE_KEY = 'martial-tactics/save';
 
   // 장비 (기획서 2026-10-29): 칸마다 주 스탯 하나, 등급 7개(신화는 확장용), 특수효과 7종은 영웅부터
@@ -39,10 +39,16 @@
   const iconBtn = (kind, onClick, size, cls) => btn(icon(kind, size), onClick, cls);
   const tap = (e, fn) => { e.style.cursor = 'pointer'; e.addEventListener('click', ev => { ev.stopPropagation(); fn(ev); }); return e; };
 
-  // 그림 파일이 아직 없어 초상은 이름을 적은 자리 표시 (Unity도 그림이 없으면 같음)
+  // 초상: web/art/portraits/<id>.jpg (빌드 때 CSS .u-<id> 배경으로 들어감). 그림이 없는 무인은 이름 자리 표시.
+  // r3~r6 = 별 수 → 테두리 색
+  const ART = new Set(window.WuxiaArt || []);
   function portrait(unitId, cls) {
     const e = el('portrait ph ' + (cls || ''));
-    if (unitId && S.UNIT[unitId]) e.append(lb(S.UNIT[unitId].name, 'ph-t'));
+    if (unitId && S.UNIT[unitId]) {
+      e.classList.add('r' + G.stars(unitId));
+      if (ART.has(unitId)) e.classList.add('art', 'u-' + unitId);
+      else e.append(lb(S.UNIT[unitId].name, 'ph-t'));
+    }
     return e;
   }
   const cardFrame = gold => el('cardedge' + (gold ? ' gold' : ''));
@@ -467,23 +473,23 @@
   }
 
   // ---------- 컨텐츠 ----------
-  function banner(name, sub, open) {
-    const b = el('banner-card' + (open ? '' : ' locked'), lb('[배너 그림]', 'banner-ph'), el('banner-title', lb(name, 'bt-name'), sub ? lb(sub, 'bt-sub') : null));
+  function banner(name, sub, open, unitId) {
+    const b = el('banner-card' + (open ? '' : ' locked'), portrait(unitId, 'banner-face'), el('banner-title', lb(name, 'bt-name'), sub ? lb(sub, 'bt-sub') : null));
     if (open) tap(b, open);
     return b;
   }
   function matchList(body) {
-    body.append(el('pscroll', banner('대전', null, openBattleReady), banner('엔트리 순위전', '준비 중', null), banner('위너스 연전', '준비 중', null)));
+    body.append(el('pscroll', banner('대전', null, openBattleReady, 'dok'), banner('엔트리 순위전', '준비 중', null, 'cheol'), banner('위너스 연전', '준비 중', null, 'sahyeol')));
   }
   // 일일 던전 (크럼블 던전 목록): 배너 카드 + 입장권 충전 시간
   function dungeons(body) {
-    const b = banner('단약 던전', N + '단계', () => go('dungeonEntry'));
+    const b = banner('단약 던전', N + '단계', () => go('dungeonEntry'), 'guyang');
     b.append(el('banner-count', lb(`${N}/${N}`, 'bc-t')), el('banner-icon', icon('pill', 34)));
     body.append(el('pscroll', b), el('charge', icon('clock', 16), lb('입장권 충전까지 ' + N, 'charge-t')));
   }
   // 단약 던전 입장 (크럼블 연구석 던전). 수치·전투 규칙 미정이라 버튼은 자리만
   function dungeonEntry() {
-    const hero = el('entry-art', lb('[단약 던전 그림]', 'banner-ph'),
+    const hero = el('entry-art',
       el('ribbon', lb('단약 던전', 'ribbon-t')),
       el('stage-pick', lb('추천 전투력 ' + N, 'sp-pow'), lb('단계 선택', 'sp-label'), el('row sp-step', btn('−', null, 'sp-btn minus'), lb(N, 'sp-n'), btn('+', null, 'sp-btn'))),
       el('entry-reward', icon('pill', 40), lb(N, 'er-n')),
@@ -509,7 +515,8 @@
   // 무인 뽑기 (크럼블 쿠키 뽑기): 위에 확률 정보 · 뽑기 레벨, 아래 1회 / 10회. 테스트 기간이라 뽑기는 무료
   function gacha(body) {
     const gb = bar(0.4, false); gb.classList.add('gl-bar');
-    body.append(el('gacha-art', lb('[무인 뽑기 그림]', 'ph-mid'),
+    const fan = el('gacha-fan', G.DRAW_POOL.filter(d => G.stars(d.id) === 5).slice(0, 3).map((d, i) => portrait(d.id, 'fan-card f' + i)));
+    body.append(el('gacha-art', el('gacha-glow'), fan,
       el('row gacha-tools', btn('확률 정보', () => go('gachaRates'), 'chip dark')),
       el('gacha-lv', lb('무인 뽑기 레벨', 'gl-label'), el('row', lb('Lv ' + N, 'gl-lv'), gb))));
     const draw = n => { app.lastDraw = app.game.draw(n); commit(); };
