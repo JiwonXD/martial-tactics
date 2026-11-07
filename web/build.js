@@ -5,15 +5,22 @@
 const fs = require('fs');
 const path = require('path');
 const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8');
-const scripts = [read('../tools/web-sim/engine.js'), read('game.js'), read('icons.js'), read('app.js')];
+// 그림(web/art/)은 data URI로 넣는다 (Artifact는 바깥 파일을 못 불러옴)
+const art = f => 'data:image/jpeg;base64,' + fs.readFileSync(path.join(__dirname, 'art', f)).toString('base64');
+const ids = fs.readdirSync(path.join(__dirname, 'art/portraits')).filter(f => f.endsWith('.jpg')).map(f => f.slice(0, -4)).sort();
+const artScript = `window.WuxiaArt = ${JSON.stringify(ids)};`;
+const artCss = `:root { --hanji: url(${art('hanji.jpg')}); --mountains: url(${art('mountains.jpg')}); }\n`
+  + ids.map(id => `.portrait.u-${id} { background-image: url(${art('portraits/' + id + '.jpg')}); }`).join('\n');
+const scripts = [read('../tools/web-sim/engine.js'), read('game.js'), read('icons.js'), artScript, read('app.js')];
 if (scripts.some(s => s.includes('</script'))) throw new Error('스크립트 안에 </script 가 있어 한 파일로 묶을 수 없음');
 
 const page = `<title>무협 카드배틀</title>
-<meta name="theme-color" content="#0e2526">
+<meta name="theme-color" content="#1c130d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Serif+KR:wght@700;900&display=swap" rel="stylesheet">
 <style>
+${artCss}
 ${read('style.css')}
 </style>
 <div id="app"></div>
