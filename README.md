@@ -22,13 +22,13 @@ Unity Hub → Add → 이 폴더를 열면 된다. 처음 열 때 Unity가 만�
 
 ## 웹게임 (Unity보다 먼저 공개하는 판)
 
-- 주소: https://jiwonxd.github.io/martial-tactics/
+- 주소 (Claude Artifact): https://claude.ai/artifact/7qxVKQLax59aKyQC4QXshq — 비공개, 다른 사람에게는 페이지의 Share 메뉴로 공유
 - 소스: `web/` — Unity 화면(`Assets/Scripts/App/`, 스타일 `App.uss`)과 진행 로직(`GameState.cs`)을 HTML/JS로 옮긴 것. 전투는 `tools/web-sim/engine.js`를 그대로 쓴다
 - 진행 상황은 브라우저 localStorage에 저장 (설정 → 저장 초기화)
 - 화면·규칙을 Unity 쪽에서 바꾸면 `web/`도 같이 고친다. 아직 정하지 않은 수치는 Unity와 같이 `[n]`
-- 로컬 확인: `node web/build.js` → `web/dist/index.html` 열기
+- 묶기: `node web/build.js` → `web/dist/artifact.html`(CSS·JS를 모두 넣은 한 파일, Artifact로 올림) · `web/dist/index.html`(로컬 확인용)
 - 테스트: `node web/test.js` (등급이 C# Catalog와 같은지, 뽑기·승급·추출·장착·덱·전투)
-- 배포: `main`에 `web/`나 `engine.js` 변경이 머지되면 (main = 실제 서비스판) GitHub Actions(`.github/workflows/web-game.yml`)가 `gh-pages` 브랜치에 올리고, GitHub Pages가 그 브랜치를 보여 준다
+- 배포: `main`(실제 서비스판)에 머지된 내용으로 `artifact.html`을 만들어 같은 Artifact 주소에 다시 올린다
 
 ## 게임 기본 틀 (기능 확인용)
 
