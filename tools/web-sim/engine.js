@@ -140,12 +140,12 @@
       desc: '평타 후 같은 적 무장해제(1합), 대상이 내상 상태면 점혈(1합)도 부여',
       cast: (b, u, t) => { b.addStatus(u, t, 'disarm', 1); if (t.status.injury) b.addStatus(u, t, 'stun', 1); } },
     { id: 'howi', name: '호위결', type: 'aura',
-      desc: '1~4합 동안 아군 주장이 받는 피해의 30%를 대신 받음 (자신이 주장이면 효과 없음)',
+      desc: '1~4합 동안 아군 주장이 받는 피해의 50%를 대신 받고, 대신 받는 피해는 50% 줄어듦 (자신이 주장이면 효과 없음)',
       setup: (b, u) => {
         const leader = b.allies(u).find(a => a.pos === 0);
         if (!leader || leader === u) return;
         b.addStatus(u, leader, 'guard', 4);
-        if (leader.status.guard) Object.assign(leader.status.guard, { by: u, ratio: 0.3 });
+        if (leader.status.guard) Object.assign(leader.status.guard, { by: u, ratio: 0.5, cut: 0.5 });
       } },
     { id: 'dujeon', name: '두전성이', type: 'passive',
       desc: '자신이 주장이면, 적이 아군에게 점혈·혼란·봉인·무장해제를 걸 때 건 적에게도 똑같이 건다',
@@ -427,7 +427,7 @@
     { id: 'paeng', name: '팽무혁', title: '하북도왕', faction: '정파', hp: 2450, ext: 169, int: 71, def: 110, spd: 160, apt: 'SBABC', skill: 'jikdo' },
     { id: 'sahyeol', name: '사혈귀', title: '혈수당주', faction: '마교', hp: 2760, ext: 191, int: 95, def: 115, spd: 175, apt: 'BSACA', skill: 'talmyeong' },
     { id: 'jangsam', name: '장삼', title: '금나귀수', faction: '사파', hp: 2700, ext: 163, int: 109, def: 126, spd: 165, apt: 'ABSBA', skill: 'geumna' },
-    { id: 'cheolwi', name: '철위강', title: '호위대장', faction: '정파', hp: 3320, ext: 123, int: 88, def: 184, spd: 90, apt: 'BBSAA', skill: 'howi' },
+    { id: 'cheolwi', name: '철위강', title: '호위대장', faction: '정파', hp: 3190, ext: 118, int: 84, def: 177, spd: 90, apt: 'BBSAA', skill: 'howi' },
     { id: 'moyongyeon', name: '모용연', title: '두전성이 전인', faction: '정파', hp: 2900, ext: 116, int: 188, def: 135, spd: 150, apt: 'ABBSA', skill: 'dujeon' },
     { id: 'dokgo', name: '독고패', title: '낭인검귀', faction: '사파', hp: 2520, ext: 167, int: 89, def: 106, spd: 155, apt: 'SABCB', skill: 'sajung' },
     { id: 'baengni', name: '백리청', title: '의협', faction: '정파', hp: 2600, ext: 159, int: 108, def: 117, spd: 145, apt: 'ASBBA', skill: 'hyeolmaek' },
@@ -688,8 +688,9 @@
         const share = Math.round(dmg * g.ratio);
         if (share > 0) {
           dmg -= share;
-          this.applyLoss(g.by, share, src, label);
-          this.log(`${this.tag(g.by)}의 호위: ${this.tag(dst)} 대신 ${share} 피해 (남은 체력 ${g.by.hp})`);
+          const taken = g.cut ? Math.max(1, Math.round(share * (1 - g.cut))) : share; // 대신 받는 피해 감소 (호위결)
+          this.applyLoss(g.by, taken, src, label);
+          this.log(`${this.tag(g.by)}의 호위: ${this.tag(dst)} 대신 ${taken} 피해 (남은 체력 ${g.by.hp})`);
           if (!g.by.dead && !opts.counter) g.by.hooks.guarded.forEach(h => h(src));
         }
       }
