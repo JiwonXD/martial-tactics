@@ -20,6 +20,16 @@ Unity Hub → Add → 이 폴더를 열면 된다. 처음 열 때 Unity가 만�
   dotnet run --project Tests/BattleParity
   ```
 
+## 웹게임 (Unity보다 먼저 공개하는 판)
+
+- 주소: https://jiwonxd.github.io/martial-tactics/
+- 소스: `web/` — Unity 화면(`Assets/Scripts/App/`, 스타일 `App.uss`)과 진행 로직(`GameState.cs`)을 HTML/JS로 옮긴 것. 전투는 `tools/web-sim/engine.js`를 그대로 쓴다
+- 진행 상황은 브라우저 localStorage에 저장 (설정 → 저장 초기화)
+- 화면·규칙을 Unity 쪽에서 바꾸면 `web/`도 같이 고친다. 아직 정하지 않은 수치는 Unity와 같이 `[n]`
+- 로컬 확인: `node web/build.js` → `web/dist/index.html` 열기
+- 테스트: `node web/test.js` (등급이 C# Catalog와 같은지, 뽑기·승급·추출·장착·덱·전투)
+- 배포: `dev`에 `web/`나 `engine.js` 변경이 올라오면 GitHub Actions(`.github/workflows/web-game.yml`)가 `gh-pages` 브랜치에 올리고, GitHub Pages가 그 브랜치를 보여 준다
+
 ## 게임 기본 틀 (기능 확인용)
 
 - 게임 진행 로직: `Assets/Scripts/Game/` (Unity 의존 없음) — 뽑기, 승급(자유 스탯), 무공 추출·장착, 덱 편성, 전투 연결

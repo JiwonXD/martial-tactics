@@ -557,7 +557,8 @@
 
     // --- 조회 ---
     tag(u) { return `[${u.side === 'A' ? '아' : '적'}] ${u.name}`; }
-    log(text) { if (this.logging) this.lines.push({ round: this.round, text }); }
+    // 기록 한 줄마다 그 시점 무인별 체력·상태도 남긴다 (C# LogLine.Hp · Status와 같음, 웹게임 전투 화면이 쓴다)
+    log(text) { if (this.logging) this.lines.push({ round: this.round, text, hp: this.units.map(u => u.hp), status: this.units.map(u => Object.keys(u.status)) }); }
     alive(side) { return this.units.filter(u => u.side === side && !u.dead); }
     allies(u) { return this.alive(u.side); }
     foes(u) { return this.alive(u.side === 'A' ? 'B' : 'A'); }
