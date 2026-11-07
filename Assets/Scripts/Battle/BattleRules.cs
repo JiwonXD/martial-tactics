@@ -6,18 +6,18 @@ namespace MartialTactics.Battle
     public sealed class BattleConfig
     {
         public int Rounds = 8;
-        public double BaseDmg = 300;      // 피해식의 B
+        public double BaseDmg = 180;      // 피해식의 B
         public double StatK = 2;          // 피해식의 k (공격 - 방어 1당)
         public double CounterBonus = 0.15; // 오행 상극 시 주는 피해 ±15%
         public double FormationCounter = 0.10; // 진법: 상극 우위 피해 추가 +10%p
-        public double FactionBonus = 0.10; // 같은 세력 3명 시 스탯 +10%
+        public double FactionBonus = 0.05; // 같은 세력 3명 시 스탯 +5%
         public double CritMult = 1.5;
         public double HealBase = 150;     // 회복식 기본값
     }
 
     public enum SkillType { Formation, Aura, Active, Chase, Passive }
 
-    public enum StatusKind { Stun, Confuse, Silence, Disarm, Taunt, Poison, Bleed, Injury, Guard }
+    public enum StatusKind { Stun, Confuse, Silence, Disarm, Taunt, Poison, Bleed, Injury, Guard, Stealth }
 
     /// <summary>고정 규칙과 표시 이름.</summary>
     public static class BattleRules
@@ -48,6 +48,7 @@ namespace MartialTactics.Battle
             { StatusKind.Stun, "점혈" }, { StatusKind.Confuse, "혼란" }, { StatusKind.Silence, "봉인" },
             { StatusKind.Disarm, "무장해제" }, { StatusKind.Taunt, "도발" }, { StatusKind.Poison, "중독" },
             { StatusKind.Bleed, "출혈" }, { StatusKind.Injury, "내상" }, { StatusKind.Guard, "호위" },
+            { StatusKind.Stealth, "은신" },
         };
 
         // 청심결이 해제하는 순서
